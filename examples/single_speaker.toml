@@ -1,0 +1,18 @@
+# 单说话人示例 — 全局参考音色，全部台词统一换
+# 运行：videodub run examples/single_speaker.toml
+# 输出：output/single_speaker.mp4
+# input 与 ref_audio 路径请按实际文件调整（相对路径按运行目录解析）
+
+[input]
+path = "input.mp4"
+
+[output]
+path = "output/single_speaker.mp4"
+
+[transcript]
+source = "asr"
+backend = "funasr"
+language = "zh"
+
+[voice]
+ref_audio = "assets/ref_voice_clean.wav"

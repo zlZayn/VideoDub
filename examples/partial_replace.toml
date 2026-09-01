@@ -1,0 +1,22 @@
+# 部分替换示例 — 只换 SPEAKER_0，SPEAKER_1 保留原声
+# 运行：videodub run examples/partial_replace.toml
+# 输出：output/partial_replace.mp4
+# 映射为空字符串 = 该说话人保留原声（TOML 没有 null，用 "" 表示）
+# 混音自动切换 partial_replace 模式（被替换段静音 + 新配音，其余原声保留）
+
+[input]
+path = "input.mp4"
+
+[output]
+path = "output/partial_replace.mp4"
+
+[transcript]
+source = "asr"
+backend = "funasr"
+language = "zh"
+diarize = true
+max_speakers = 2
+
+[voice.speaker_map]
+SPEAKER_0 = "assets/ref_voice_clean.wav"
+SPEAKER_1 = ""

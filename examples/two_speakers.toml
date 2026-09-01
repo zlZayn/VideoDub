@@ -1,0 +1,16 @@
+[input]
+path = "input.mp4"
+
+[output]
+path = "output/two_speakers.mp4"
+
+[transcript]
+source = "asr"
+backend = "funasr"
+language = "zh"
+diarize = true
+max_speakers = 2
+
+[voice.speaker_map]
+SPEAKER_0 = "assets/ref_voice_clean.wav"
+SPEAKER_1 = "assets/ref_voice_3mm.wav"

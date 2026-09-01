@@ -1,0 +1,1 @@
+"""领域包：稳定数据模型（Segment / VoiceAction / MixPlan 等）"""

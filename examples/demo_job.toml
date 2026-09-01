@@ -1,0 +1,18 @@
+[input]
+path = "input.mp4"
+
+[output]
+path = "output/single_speaker.mp4"
+
+[transcript]
+source = "asr"
+backend = "funasr"
+language = "zh"
+
+[voice]
+ref_audio = "assets/ref_voice_clean.wav"
+
+[align]
+target_volume_db = -10.7
+fade_in_ms = 50
+fade_out_ms = 50

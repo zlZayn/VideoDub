@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# 虚拟环境
+.venv/
+venv/
+
+# 缓存与测试临时目录（见 docs/ARCHITECTURE.md 第 7 节）
+.cache/
+.pytest-tmp/
+
+# 生成目录：作品输出与工作目录（含大体积 mp4，不入库）
+output/
+.videodub/
+
+# 媒体素材：用户提供的参考音频（见 assets/README.md，clone 后需自备）
+assets/*.wav
+assets/*.m4a
+assets/*.mp3
+
+# 密钥防护（项目密钥走 JobSpec/CLI 参数，不使用 .env；此处兜底）
+.env
+.env.*
+
+# 系统文件
+.DS_Store
+Thumbs.db
