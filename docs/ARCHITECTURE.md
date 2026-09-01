@@ -95,7 +95,7 @@ resolve_media → load_transcript → build_voice_plan → synthesize → align 
 | 集成 | tests/test_pipeline | 假后端全链 mock 跑通 + 报告断言 |
 | e2e | tests/test_e2e_ffmpeg | 真实 ffmpeg + 假 TTS（full/partial/keep_bg 三模式） |
 
-- 统一 pytest：项目根目录 `uv sync --all-groups` 后 `uv run pytest -q`
+- 统一 pytest：项目根目录 `uv run pytest -q`（自动同步 pyproject 骨架）
 - pytest basetemp 配置在工作区 `.pytest-tmp/`（本机 %TEMP%\pytest-of-* 有 ACL 遗留问题）
 
 ## 8. 关键决策（含替代方案）
