@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "videodub"
+version = "0.1.0"
+description = "视频音色替换 — 本地 VoxCPM2 音色克隆 + 逐句时长对齐对口型"
+requires-python = ">=3.12"
+# 依赖清单待补（骨架不装依赖，后端按需安装）：
+# faster-whisper>=1.0 / modelscope>=1.18 / voxcpm>=2.0 / soundfile>=0.12 / httpx>=0.27 / numpy>=1.24 / pydantic>=2.0
+dependencies = []
+
+[project.scripts]
+videodub = "videodub.cli.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/videodub"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+# pytest 9 移除了 ini 的 basetemp 键，用 addopts 落地同一意图：
+# tmp 目录指到工作区 .pytest-tmp/（%TEMP%\pytest-of-* 有 ACL 遗留问题，勿改回）
+addopts = "--basetemp=.pytest-tmp"
