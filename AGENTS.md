@@ -9,6 +9,7 @@
 - 分层单向：cli → pipeline → backends/ffmpeg/config → domain；跨模块组合只在 pipeline/runner；模块之间只传 domain 类型，禁止裸 dict / None 语义；契约变更同步架构文档
 - 模型密钥只走 JobSpec TOML / CLI 参数（`--api-key`），禁止进代码与 git；`.env*` 已忽略兜底
 - 参考音色 assets/*.wav 不入库；新增素材在 [assets/README.md](assets/README.md) 登记
+- 双件分离：AGENTS.md 只写规则，README.md 只写是什么/怎么改
 
 ## 常用命令（活文档）
 
