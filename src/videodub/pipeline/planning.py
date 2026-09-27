@@ -17,7 +17,9 @@ from videodub.domain.transcript import Transcript
 DEFAULT_PROFILE_ID = "default"
 
 
-def build_voice_plan(transcript: Transcript, voice: VoiceSpec) -> tuple[VoiceAssignment, ...]:
+def build_voice_plan(
+    transcript: Transcript, voice: VoiceSpec
+) -> tuple[VoiceAssignment, ...]:
     """逐句决定动作：
     - speaker_map 模式：映射为 None → 保留原声；映射为路径 → 用该音色合成；不在映射 → 保留原声
     - 全局 ref_audio 模式：全部合成
@@ -28,20 +30,36 @@ def build_voice_plan(transcript: Transcript, voice: VoiceSpec) -> tuple[VoiceAss
             if segment.speaker is not None and segment.speaker in voice.speaker_map:
                 ref = voice.speaker_map[segment.speaker]
                 if ref is None:
-                    assignments.append(VoiceAssignment(segment.id, VoiceAction.KEEP_ORIGINAL))
+                    assignments.append(
+                        VoiceAssignment(segment.id, VoiceAction.KEEP_ORIGINAL)
+                    )
                 else:
-                    assignments.append(VoiceAssignment(segment.id, VoiceAction.SYNTHESIZE, segment.speaker))
+                    assignments.append(
+                        VoiceAssignment(
+                            segment.id, VoiceAction.SYNTHESIZE, segment.speaker
+                        )
+                    )
             else:
-                assignments.append(VoiceAssignment(segment.id, VoiceAction.KEEP_ORIGINAL))
+                assignments.append(
+                    VoiceAssignment(segment.id, VoiceAction.KEEP_ORIGINAL)
+                )
     else:
         for segment in transcript.segments:
-            assignments.append(VoiceAssignment(segment.id, VoiceAction.SYNTHESIZE, DEFAULT_PROFILE_ID))
+            assignments.append(
+                VoiceAssignment(segment.id, VoiceAction.SYNTHESIZE, DEFAULT_PROFILE_ID)
+            )
     return tuple(assignments)
 
 
-def build_mix_plan(transcript: Transcript, aligned_clips: tuple[AlignedClip, ...], mix: MixSpec) -> MixPlan:
+def build_mix_plan(
+    transcript: Transcript, aligned_clips: tuple[AlignedClip, ...], mix: MixSpec
+) -> MixPlan:
     """按混音策略与对齐结果构建 MixPlan（渲染层唯一输入）"""
-    ok_clips = [clip for clip in aligned_clips if clip.status is SynthStatus.OK and clip.audio_path]
+    ok_clips = [
+        clip
+        for clip in aligned_clips
+        if clip.status is SynthStatus.OK and clip.audio_path
+    ]
     placed = tuple(
         PlacedClip(
             segment_id=clip.segment_id,
@@ -56,7 +74,9 @@ def build_mix_plan(transcript: Transcript, aligned_clips: tuple[AlignedClip, ...
     return MixPlan(
         mode=mode,
         clips=placed,
-        background_volume_ratio=mix.background_volume_ratio if mode is MixMode.KEEP_BACKGROUND else None,
+        background_volume_ratio=mix.background_volume_ratio
+        if mode is MixMode.KEEP_BACKGROUND
+        else None,
     )
 
 

@@ -10,6 +10,7 @@ from videodub.config.job_spec import MixPolicy
 
 # ── run ──
 
+
 def _media(tmp_path):
     (tmp_path / "input.mp4").write_bytes(b"media")
     (tmp_path / "ref.wav").write_bytes(b"ref")
@@ -20,15 +21,24 @@ def test_run_minimal_flags_build_job(tmp_path, monkeypatch):
     tmp_path = _media(tmp_path)
     captured = []
     import videodub.cli.run as run_cmd
+
     monkeypatch.setattr(run_cmd, "run_job", lambda job: captured.append(job))
 
-    code = main([
-        "run", str(tmp_path / "input.mp4"),
-        "--ref-audio", str(tmp_path / "ref.wav"),
-        "-o", str(tmp_path / "out.mp4"),
-        "--diarize", "--max-speakers", "3",
-        "--language", "zh",
-    ])
+    code = main(
+        [
+            "run",
+            str(tmp_path / "input.mp4"),
+            "--ref-audio",
+            str(tmp_path / "ref.wav"),
+            "-o",
+            str(tmp_path / "out.mp4"),
+            "--diarize",
+            "--max-speakers",
+            "3",
+            "--language",
+            "zh",
+        ]
+    )
 
     assert code == 0
     job = captured[0]
@@ -48,14 +58,21 @@ def test_run_speaker_map_flags(tmp_path, monkeypatch):
     (tmp_path / "b.wav").write_bytes(b"b")
     captured = []
     import videodub.cli.run as run_cmd
+
     monkeypatch.setattr(run_cmd, "run_job", lambda job: captured.append(job))
 
-    main([
-        "run", str(tmp_path / "input.mp4"),
-        "--ref-audio-0", str(tmp_path / "a.wav"),
-        "--ref-audio-1", str(tmp_path / "b.wav"),
-        "-o", str(tmp_path / "out.mp4"),
-    ])
+    main(
+        [
+            "run",
+            str(tmp_path / "input.mp4"),
+            "--ref-audio-0",
+            str(tmp_path / "a.wav"),
+            "--ref-audio-1",
+            str(tmp_path / "b.wav"),
+            "-o",
+            str(tmp_path / "out.mp4"),
+        ]
+    )
     job = captured[0]
     assert job.voice.speaker_map == {
         "SPEAKER_0": tmp_path / "a.wav",
@@ -67,14 +84,22 @@ def test_run_keep_bg_maps_to_policy(tmp_path, monkeypatch):
     tmp_path = _media(tmp_path)
     captured = []
     import videodub.cli.run as run_cmd
+
     monkeypatch.setattr(run_cmd, "run_job", lambda job: captured.append(job))
 
-    main([
-        "run", str(tmp_path / "input.mp4"),
-        "--ref-audio", str(tmp_path / "ref.wav"),
-        "-o", str(tmp_path / "out.mp4"),
-        "--keep-bg", "--bg-volume", "0.5",
-    ])
+    main(
+        [
+            "run",
+            str(tmp_path / "input.mp4"),
+            "--ref-audio",
+            str(tmp_path / "ref.wav"),
+            "-o",
+            str(tmp_path / "out.mp4"),
+            "--keep-bg",
+            "--bg-volume",
+            "0.5",
+        ]
+    )
     job = captured[0]
     assert job.mix.policy is MixPolicy.KEEP_BACKGROUND
     assert job.mix.background_volume_ratio == 0.5
@@ -84,7 +109,8 @@ def test_run_job_toml_with_cli_override(tmp_path, monkeypatch):
     tmp_path = _media(tmp_path)
     job_file = tmp_path / "job.toml"
     _posix = lambda p: str(p).replace("\\", "/")
-    job_file.write_text(f"""
+    job_file.write_text(
+        f"""
 [input]
 path = "{_posix(tmp_path / "input.mp4")}"
 
@@ -96,9 +122,12 @@ ref_audio = "{_posix(tmp_path / "ref.wav")}"
 
 [mix]
 policy = "keep_background"
-""", encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
     captured = []
     import videodub.cli.run as run_cmd
+
     monkeypatch.setattr(run_cmd, "run_job", lambda job: captured.append(job))
 
     main(["run", "--job", str(job_file), "--tts-steps", "25"])
@@ -114,15 +143,20 @@ def test_run_without_input_or_job_exits(tmp_path):
 
 def test_run_invalid_config_returns_1(tmp_path, capsys):
     tmp_path = _media(tmp_path)
-    code = main([
-        "run", str(tmp_path / "input.mp4"),
-        "-o", str(tmp_path / "out.mp4"),
-    ])
+    code = main(
+        [
+            "run",
+            str(tmp_path / "input.mp4"),
+            "-o",
+            str(tmp_path / "out.mp4"),
+        ]
+    )
     assert code == 1
     assert "必须指定参考音色" in capsys.readouterr().err
 
 
 # ── transcribe ──
+
 
 def test_transcribe_command(tmp_path, monkeypatch):
     (tmp_path / "input.mp4").write_bytes(b"media")
@@ -130,20 +164,28 @@ def test_transcribe_command(tmp_path, monkeypatch):
     class FakeTranscriber:
         def transcribe(self, audio_path):
             import videodub.domain.transcript as tr
+
             return tr.Transcript.from_dicts(
                 [{"start": 0.0, "end": 1.2, "text": "你好"}], source="funasr"
             )
 
     import videodub.cli.transcribe as tc
+
     monkeypatch.setattr(tc, "get_transcriber", lambda spec: FakeTranscriber())
     monkeypatch.setattr(tc, "run_ffmpeg_command", lambda *a, **kw: None)
     monkeypatch.setattr(tc, "ensure_ffmpeg_available", lambda: None)
 
     output = tmp_path / "transcript.json"
-    code = main([
-        "transcribe", str(tmp_path / "input.mp4"),
-        "--backend", "funasr", "-o", str(output),
-    ])
+    code = main(
+        [
+            "transcribe",
+            str(tmp_path / "input.mp4"),
+            "--backend",
+            "funasr",
+            "-o",
+            str(output),
+        ]
+    )
 
     assert code == 0
     items = json.loads(output.read_text(encoding="utf-8"))
@@ -158,11 +200,13 @@ def test_transcribe_default_output_stage_numbering(tmp_path, monkeypatch):
     class FakeTranscriber:
         def transcribe(self, audio_path):
             import videodub.domain.transcript as tr
+
             return tr.Transcript.from_dicts(
                 [{"start": 0.0, "end": 1.2, "text": "你好"}], source="funasr"
             )
 
     import videodub.cli.transcribe as tc
+
     monkeypatch.setattr(tc, "get_transcriber", lambda spec: FakeTranscriber())
     monkeypatch.setattr(tc, "run_ffmpeg_command", lambda *a, **kw: None)
     monkeypatch.setattr(tc, "ensure_ffmpeg_available", lambda: None)
@@ -180,6 +224,7 @@ def test_run_default_output_stage_numbering(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     captured = []
     import videodub.cli.run as run_cmd
+
     monkeypatch.setattr(run_cmd, "run_job", lambda job: captured.append(job))
 
     code = main(["run", "input.mp4", "--ref-audio", "ref.wav"])
@@ -190,24 +235,36 @@ def test_run_default_output_stage_numbering(tmp_path, monkeypatch):
 
 # ── label ──
 
+
 def _unlabeled_transcript(tmp_path):
     path = tmp_path / "transcript.json"
-    path.write_text(json.dumps([
-        {"id": "seg_0001", "start": 0.0, "end": 1.0, "text": "你好"},
-        {"id": "seg_0002", "start": 1.0, "end": 2.0, "text": "再见"},
-        {"id": "seg_0003", "start": 2.0, "end": 3.0, "text": "谢谢"},
-    ], ensure_ascii=False), encoding="utf-8")
+    path.write_text(
+        json.dumps(
+            [
+                {"id": "seg_0001", "start": 0.0, "end": 1.0, "text": "你好"},
+                {"id": "seg_0002", "start": 1.0, "end": 2.0, "text": "再见"},
+                {"id": "seg_0003", "start": 2.0, "end": 3.0, "text": "谢谢"},
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
     return path
 
 
 def test_label_apply_backfills_and_normalizes(tmp_path, capsys):
     src = _unlabeled_transcript(tmp_path)
     edited = tmp_path / "edited.json"
-    edited.write_text(json.dumps([
-        {"speaker": 0},
-        {"speaker": 1},
-        {"speaker": "SPEAKER_1"},
-    ]), encoding="utf-8")
+    edited.write_text(
+        json.dumps(
+            [
+                {"speaker": 0},
+                {"speaker": 1},
+                {"speaker": "SPEAKER_1"},
+            ]
+        ),
+        encoding="utf-8",
+    )
     out = tmp_path / "labeled.json"
 
     code = main(["label", str(src), "--apply", str(edited), "-o", str(out)])
@@ -221,17 +278,46 @@ def test_label_apply_backfills_and_normalizes(tmp_path, capsys):
 def test_label_apply_sparse_merge_keeps_existing(tmp_path, capsys):
     """只改部分句子，未填写的保留原始标注"""
     src = tmp_path / "transcript.json"
-    src.write_text(json.dumps([
-        {"id": "seg_0001", "start": 0.0, "end": 1.0, "text": "你好", "speaker": "SPEAKER_0"},
-        {"id": "seg_0002", "start": 1.0, "end": 2.0, "text": "再见", "speaker": "SPEAKER_1"},
-        {"id": "seg_0003", "start": 2.0, "end": 3.0, "text": "谢谢", "speaker": "SPEAKER_0"},
-    ], ensure_ascii=False), encoding="utf-8")
+    src.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "seg_0001",
+                    "start": 0.0,
+                    "end": 1.0,
+                    "text": "你好",
+                    "speaker": "SPEAKER_0",
+                },
+                {
+                    "id": "seg_0002",
+                    "start": 1.0,
+                    "end": 2.0,
+                    "text": "再见",
+                    "speaker": "SPEAKER_1",
+                },
+                {
+                    "id": "seg_0003",
+                    "start": 2.0,
+                    "end": 3.0,
+                    "text": "谢谢",
+                    "speaker": "SPEAKER_0",
+                },
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
     edited = tmp_path / "edited.json"
-    edited.write_text(json.dumps([
-        {},
-        {"speaker": 0},  # 只改这一句：SPEAKER_1 → SPEAKER_0
-        {},
-    ]), encoding="utf-8")
+    edited.write_text(
+        json.dumps(
+            [
+                {},
+                {"speaker": 0},  # 只改这一句：SPEAKER_1 → SPEAKER_0
+                {},
+            ]
+        ),
+        encoding="utf-8",
+    )
     out = tmp_path / "labeled.json"
 
     code = main(["label", str(src), "--apply", str(edited), "-o", str(out)])
@@ -244,10 +330,22 @@ def test_label_apply_sparse_merge_keeps_existing(tmp_path, capsys):
 def test_label_apply_keeps_unlabeled_with_warning(tmp_path, capsys):
     """全部未标注时保留原始 speaker（如果有），发出警告"""
     src = tmp_path / "transcript.json"
-    src.write_text(json.dumps([
-        {"id": "seg_0001", "start": 0.0, "end": 1.0, "text": "你好", "speaker": "SPEAKER_0"},
-        {"id": "seg_0002", "start": 1.0, "end": 2.0, "text": "再见"},
-    ], ensure_ascii=False), encoding="utf-8")
+    src.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "seg_0001",
+                    "start": 0.0,
+                    "end": 1.0,
+                    "text": "你好",
+                    "speaker": "SPEAKER_0",
+                },
+                {"id": "seg_0002", "start": 1.0, "end": 2.0, "text": "再见"},
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
     edited = tmp_path / "edited.json"
     edited.write_text(json.dumps([{}, {}]), encoding="utf-8")
     out = tmp_path / "labeled.json"
@@ -444,9 +542,15 @@ def test_label_interactive_quit_discards(tmp_path, monkeypatch):
 def test_label_default_output_follows_stage_numbering(tmp_path, monkeypatch):
     """输入 01_*.json 时默认输出同目录 02_labeled.json"""
     src = tmp_path / "01_transcript.json"
-    src.write_text(json.dumps([
-        {"id": "seg_0001", "start": 0.0, "end": 1.0, "text": "你好"},
-    ], ensure_ascii=False), encoding="utf-8")
+    src.write_text(
+        json.dumps(
+            [
+                {"id": "seg_0001", "start": 0.0, "end": 1.0, "text": "你好"},
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
     monkeypatch.setattr("builtins.input", lambda prompt="": "w")
 
     code = main(["label", str(src)])
@@ -458,9 +562,21 @@ def test_label_default_output_follows_stage_numbering(tmp_path, monkeypatch):
 def test_label_default_output_inplace_for_labeled(tmp_path, monkeypatch):
     """输入已是 xx_labeled.json 时默认就地覆盖（不产生 _labeled_labeled）"""
     src = tmp_path / "02_labeled.json"
-    src.write_text(json.dumps([
-        {"id": "seg_0001", "start": 0.0, "end": 1.0, "text": "你好", "speaker": "SPEAKER_0"},
-    ], ensure_ascii=False), encoding="utf-8")
+    src.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "seg_0001",
+                    "start": 0.0,
+                    "end": 1.0,
+                    "text": "你好",
+                    "speaker": "SPEAKER_0",
+                },
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
     answers = iter(["w"])
     monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
 
@@ -473,13 +589,26 @@ def test_label_default_output_inplace_for_labeled(tmp_path, monkeypatch):
 
 # ── label 断句结构编辑（m 合并 / x 拆分 / d 删除）──
 
+
 def _labeled_transcript(tmp_path):
     path = tmp_path / "transcript.json"
-    path.write_text(json.dumps([
-        {"id": "seg_0001", "start": 0.0, "end": 1.0, "text": "你好，"},
-        {"id": "seg_0002", "start": 1.0, "end": 2.0, "text": "再见。", "speaker": "SPEAKER_1"},
-        {"id": "seg_0003", "start": 2.0, "end": 3.0, "text": "谢谢"},
-    ], ensure_ascii=False), encoding="utf-8")
+    path.write_text(
+        json.dumps(
+            [
+                {"id": "seg_0001", "start": 0.0, "end": 1.0, "text": "你好，"},
+                {
+                    "id": "seg_0002",
+                    "start": 1.0,
+                    "end": 2.0,
+                    "text": "再见。",
+                    "speaker": "SPEAKER_1",
+                },
+                {"id": "seg_0003", "start": 2.0, "end": 3.0, "text": "谢谢"},
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
     return path
 
 
@@ -536,9 +665,21 @@ def test_label_merge_range_and_rejects_gap(tmp_path, monkeypatch):
 def test_label_split_by_text_ratio(tmp_path, monkeypatch):
     """x 1 你好|再见：切分点按字数比例（0-2s 的 2:2 → 1.0s）"""
     src = tmp_path / "transcript.json"
-    src.write_text(json.dumps([
-        {"id": "seg_0001", "start": 0.0, "end": 2.0, "text": "你好再见", "speaker": "SPEAKER_0"},
-    ], ensure_ascii=False), encoding="utf-8")
+    src.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "seg_0001",
+                    "start": 0.0,
+                    "end": 2.0,
+                    "text": "你好再见",
+                    "speaker": "SPEAKER_0",
+                },
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
     answers = iter(["x 1 你好|再见", "w"])
     monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
     out = tmp_path / "labeled.json"
@@ -552,15 +693,24 @@ def test_label_split_by_text_ratio(tmp_path, monkeypatch):
     assert items[0]["end"] == 1.0
     assert items[1]["text"] == "再见"
     assert items[1]["start"] == 1.0
-    assert [seg["speaker"] for seg in items] == ["SPEAKER_0", "SPEAKER_0"]  # 两半继承说话人
+    assert [seg["speaker"] for seg in items] == [
+        "SPEAKER_0",
+        "SPEAKER_0",
+    ]  # 两半继承说话人
     assert [seg["id"] for seg in items] == ["seg_0001", "seg_0002"]
 
 
 def test_label_split_explicit_time(tmp_path, monkeypatch):
     src = tmp_path / "transcript.json"
-    src.write_text(json.dumps([
-        {"id": "seg_0001", "start": 0.0, "end": 2.0, "text": "你好再见"},
-    ], ensure_ascii=False), encoding="utf-8")
+    src.write_text(
+        json.dumps(
+            [
+                {"id": "seg_0001", "start": 0.0, "end": 2.0, "text": "你好再见"},
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
     answers = iter(["x 1 0.5 你好|再见", "w"])
     monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
     out = tmp_path / "labeled.json"
@@ -604,13 +754,24 @@ def test_label_undo_structural_edit(tmp_path, monkeypatch):
 
 # ── inspect / doctor ──
 
+
 def test_inspect_command(tmp_path, monkeypatch, capsys):
     import videodub.cli.inspect as ic
     from videodub.domain.models import MediaAsset
-    monkeypatch.setattr(ic, "probe_media", lambda p: MediaAsset(
-        path=Path(p), kind="video", duration=12.5, has_video=True, has_audio=True,
-        audio_sample_rate=48000, audio_channels=2,
-    ))
+
+    monkeypatch.setattr(
+        ic,
+        "probe_media",
+        lambda p: MediaAsset(
+            path=Path(p),
+            kind="video",
+            duration=12.5,
+            has_video=True,
+            has_audio=True,
+            audio_sample_rate=48000,
+            audio_channels=2,
+        ),
+    )
     code = main(["inspect", "x.mp4"])
     out = capsys.readouterr().out
     assert code == 0
@@ -620,7 +781,10 @@ def test_inspect_command(tmp_path, monkeypatch, capsys):
 
 def test_doctor_command(monkeypatch):
     import videodub.cli.doctor as dc
-    monkeypatch.setattr(dc.shutil, "which", lambda name: "C:/tools/" + name)  # ffmpeg/ffprobe 可用
+
+    monkeypatch.setattr(
+        dc.shutil, "which", lambda name: "C:/tools/" + name
+    )  # ffmpeg/ffprobe 可用
     monkeypatch.setattr(dc, "_torch_info", lambda: "2.0.0 (CUDA: 不可用)")
     monkeypatch.setattr(dc, "_import_version", lambda name: "1.0.0")
     code = main(["doctor"])

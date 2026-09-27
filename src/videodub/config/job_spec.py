@@ -97,7 +97,9 @@ class VoiceSpec(BaseModel):
         if isinstance(data, dict) and isinstance(data.get("speaker_map"), dict):
             data = {
                 **data,
-                "speaker_map": {k: (None if v == "" else v) for k, v in data["speaker_map"].items()},
+                "speaker_map": {
+                    k: (None if v == "" else v) for k, v in data["speaker_map"].items()
+                },
             }
         return data
 
@@ -157,7 +159,9 @@ class JobSpec(BaseModel):
         if has_ref and has_map:
             raise ValueError("ref_audio 与 speaker_map 二选一，不能同时指定")
         if not has_ref and not has_map:
-            raise ValueError("必须指定参考音色：ref_audio（全局）或 speaker_map（分角色）")
+            raise ValueError(
+                "必须指定参考音色：ref_audio（全局）或 speaker_map（分角色）"
+            )
         return self
 
 

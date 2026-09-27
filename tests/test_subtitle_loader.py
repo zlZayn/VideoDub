@@ -10,14 +10,17 @@ from videodub.pipeline.transcript_loader import load_subtitle_transcript
 
 def test_parse_srt_basic(tmp_path):
     path = tmp_path / "a.srt"
-    path.write_text("""1
+    path.write_text(
+        """1
 00:00:01,000 --> 00:00:03,500
 你好世界
 
 2
 00:00:04,000 --> 00:00:06,000
 测试字幕
-""", encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
     transcript = load_subtitle_transcript(str(path))
     assert len(transcript.segments) == 2
     assert transcript.segments[0].range.start == 1.0
@@ -29,11 +32,14 @@ def test_parse_srt_basic(tmp_path):
 
 def test_parse_srt_multiline(tmp_path):
     path = tmp_path / "a.srt"
-    path.write_text("""1
+    path.write_text(
+        """1
 00:00:01,000 --> 00:00:03,000
 第一行
 第二行
-""", encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
     transcript = load_subtitle_transcript(str(path))
     assert len(transcript.segments) == 1
     assert "第一行" in transcript.segments[0].text
@@ -42,7 +48,8 @@ def test_parse_srt_multiline(tmp_path):
 
 def test_parse_ass_basic(tmp_path):
     path = tmp_path / "a.ass"
-    path.write_text("""[Script Info]
+    path.write_text(
+        """[Script Info]
 Title: Test
 
 [V4+ Styles]
@@ -53,7 +60,9 @@ Style: Default,Arial,20,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 Dialogue: 0,0:00:01.00,0:00:03.50,Default,,0,0,0,,你好世界
 Dialogue: 0,0:00:04.00,0:00:06.00,Default,,0,0,0,,测试字幕
-""", encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
     transcript = load_subtitle_transcript(str(path))
     assert len(transcript.segments) == 2
     assert transcript.segments[0].range.start == 1.0

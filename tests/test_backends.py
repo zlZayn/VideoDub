@@ -62,17 +62,22 @@ class _FakeClient:
 
 # ── FunASR ──
 
+
 def test_funasr_diarization_transcript(monkeypatch):
     class FakeAutoModel:
         def __init__(self, **kwargs):
             self.kwargs = kwargs
 
         def generate(self, input=None, **kwargs):
-            return [{"sentence_info": [
-                {"sentence": "你好", "start": 100, "end": 800, "spk": 0},
-                {"sentence": "再见", "start": 900, "end": 1500, "spk": 1},
-                {"sentence": "", "start": 1600, "end": 1700, "spk": 0},
-            ]}]
+            return [
+                {
+                    "sentence_info": [
+                        {"sentence": "你好", "start": 100, "end": 800, "spk": 0},
+                        {"sentence": "再见", "start": 900, "end": 1500, "spk": 1},
+                        {"sentence": "", "start": 1600, "end": 1700, "spk": 0},
+                    ]
+                }
+            ]
 
     _inject_module(monkeypatch, "funasr", AutoModel=FakeAutoModel)
     transcriber = FunAsrTranscriber(enable_diarization=True, max_speakers=2)
@@ -92,19 +97,36 @@ def test_funasr_diarization_transcript(monkeypatch):
 
 def test_funasr_diarization_splits_at_inner_silence(monkeypatch):
     """句内静音 >= 阈值处细切：说话人继承、时间取片内首尾字符时间戳"""
+
     class FakeAutoModel(_FakeAutoModel):
         def generate(self, input=None, **kwargs):
             # "我们这里是药店，买酒到隔壁，" 12 个非标点字符；"药店"后 300ms 静音
-            return [{
-                "sentence_info": [
-                    {"text": "我们这里是药店，买酒到隔壁，", "start": 400, "end": 3000, "spk": 1},
-                ],
-                "timestamp": [
-                    [400, 600], [600, 800], [800, 1000], [1000, 1200], [1200, 1400], [1400, 1600],
-                    [1600, 1800],
-                    [2100, 2300], [2300, 2500], [2500, 2700], [2700, 2900], [2900, 3000],
-                ],
-            }]
+            return [
+                {
+                    "sentence_info": [
+                        {
+                            "text": "我们这里是药店，买酒到隔壁，",
+                            "start": 400,
+                            "end": 3000,
+                            "spk": 1,
+                        },
+                    ],
+                    "timestamp": [
+                        [400, 600],
+                        [600, 800],
+                        [800, 1000],
+                        [1000, 1200],
+                        [1200, 1400],
+                        [1400, 1600],
+                        [1600, 1800],
+                        [2100, 2300],
+                        [2300, 2500],
+                        [2500, 2700],
+                        [2700, 2900],
+                        [2900, 3000],
+                    ],
+                }
+            ]
 
     _inject_module(monkeypatch, "funasr", AutoModel=FakeAutoModel)
     transcriber = FunAsrTranscriber(enable_diarization=True, split_silence_ms=200)
@@ -124,14 +146,25 @@ def test_funasr_diarization_splits_at_inner_silence(monkeypatch):
 
 def test_funasr_diarization_silence_split_skips_misaligned(monkeypatch):
     """时间戳数与字符数不一致时该句不切（宁可漏切不可错切）"""
+
     class FakeAutoModel(_FakeAutoModel):
         def generate(self, input=None, **kwargs):
-            return [{
-                "sentence_info": [
-                    {"text": "我们这里是药店买酒到隔壁", "start": 400, "end": 3000, "spk": 0},
-                ],
-                "timestamp": [[400, 600], [600, 800]],  # 只有 2 个时间戳，字符 11 个
-            }]
+            return [
+                {
+                    "sentence_info": [
+                        {
+                            "text": "我们这里是药店买酒到隔壁",
+                            "start": 400,
+                            "end": 3000,
+                            "spk": 0,
+                        },
+                    ],
+                    "timestamp": [
+                        [400, 600],
+                        [600, 800],
+                    ],  # 只有 2 个时间戳，字符 11 个
+                }
+            ]
 
     _inject_module(monkeypatch, "funasr", AutoModel=FakeAutoModel)
     transcriber = FunAsrTranscriber(enable_diarization=True, split_silence_ms=200)
@@ -146,13 +179,24 @@ def test_funasr_diarization_silence_split_skips_misaligned(monkeypatch):
 def test_funasr_no_diarization_timestamp_split(monkeypatch):
     class FakeAutoModel(_FakeAutoModel):
         def generate(self, input=None, **kwargs):
-            return [{
-                "text": "你 好 世 界 再 见",
-                "timestamp": [[0, 200], [200, 400], [400, 600], [600, 800], [900, 1100], [1100, 1300]],
-            }]
+            return [
+                {
+                    "text": "你 好 世 界 再 见",
+                    "timestamp": [
+                        [0, 200],
+                        [200, 400],
+                        [400, 600],
+                        [600, 800],
+                        [900, 1100],
+                        [1100, 1300],
+                    ],
+                }
+            ]
 
     _inject_module(monkeypatch, "funasr", AutoModel=FakeAutoModel)
-    transcriber = FunAsrTranscriber(min_silence_ms=300)  # 400-600 与 600-800 间隙 100ms，不切
+    transcriber = FunAsrTranscriber(
+        min_silence_ms=300
+    )  # 400-600 与 600-800 间隙 100ms，不切
 
     transcript = transcriber.transcribe("audio.wav")
 
@@ -184,11 +228,14 @@ def test_funasr_empty_result(monkeypatch):
 
 # ── faster-whisper ──
 
+
 def test_whisper_transcribe(monkeypatch):
     def fake_model_init(self, model_path, device=None, compute_type=None):
         self.path = model_path
 
-    def fake_transcribe(self, audio, language=None, beam_size=None, vad_filter=None, vad_parameters=None):
+    def fake_transcribe(
+        self, audio, language=None, beam_size=None, vad_filter=None, vad_parameters=None
+    ):
         info = SimpleNamespace(language="zh", language_probability=0.95)
         segments = [
             SimpleNamespace(start=0.0, end=1.2, text=" 第一句 "),
@@ -196,14 +243,19 @@ def test_whisper_transcribe(monkeypatch):
         ]
         return iter(segments), info
 
-    fake_whisper = SimpleNamespace(WhisperModel=type(
-        "FakeWhisper", (), {"__init__": fake_model_init, "transcribe": fake_transcribe}
-    ))
+    fake_whisper = SimpleNamespace(
+        WhisperModel=type(
+            "FakeWhisper",
+            (),
+            {"__init__": fake_model_init, "transcribe": fake_transcribe},
+        )
+    )
     monkeypatch.setitem(sys.modules, "faster_whisper", fake_whisper)
     _inject_module(monkeypatch, "modelscope")
     _inject_module(monkeypatch, "modelscope.hub")
     _inject_module(
-        monkeypatch, "modelscope.hub.snapshot_download",
+        monkeypatch,
+        "modelscope.hub.snapshot_download",
         snapshot_download=lambda model_id: f"/models/{model_id}",
     )
 
@@ -224,13 +276,16 @@ def test_whisper_unknown_model_raises(monkeypatch):
 
 # ── VoxCPM 本地 ──
 
+
 def test_voxcpm_synthesize_ok(monkeypatch, tmp_path):
-    fake_voxcpm = SimpleNamespace(VoxCPM=SimpleNamespace(
-        from_pretrained=lambda *a, **kw: SimpleNamespace(
-            generate=lambda **kw: np.zeros((48000,), dtype=np.float32),
-            tts_model=SimpleNamespace(sample_rate=48000),
-        ),
-    ))
+    fake_voxcpm = SimpleNamespace(
+        VoxCPM=SimpleNamespace(
+            from_pretrained=lambda *a, **kw: SimpleNamespace(
+                generate=lambda **kw: np.zeros((48000,), dtype=np.float32),
+                tts_model=SimpleNamespace(sample_rate=48000),
+            ),
+        )
+    )
     monkeypatch.setitem(sys.modules, "voxcpm", fake_voxcpm)
 
     synthesizer = VoxCpmSynthesizer(device="cpu", inference_steps=10)
@@ -255,9 +310,13 @@ def test_voxcpm_generate_error(monkeypatch, tmp_path):
     def boom(**kwargs):
         raise RuntimeError("模型崩溃")
 
-    fake_voxcpm = SimpleNamespace(VoxCPM=SimpleNamespace(
-        from_pretrained=lambda *a, **kw: SimpleNamespace(generate=boom, tts_model=SimpleNamespace(sample_rate=48000)),
-    ))
+    fake_voxcpm = SimpleNamespace(
+        VoxCPM=SimpleNamespace(
+            from_pretrained=lambda *a, **kw: SimpleNamespace(
+                generate=boom, tts_model=SimpleNamespace(sample_rate=48000)
+            ),
+        )
+    )
     monkeypatch.setitem(sys.modules, "voxcpm", fake_voxcpm)
 
     synthesizer = VoxCpmSynthesizer()
@@ -268,6 +327,7 @@ def test_voxcpm_generate_error(monkeypatch, tmp_path):
 
 # ── TTS API ──
 
+
 def test_tts_api_synthesize_ok(tmp_path):
     ref_file = tmp_path / "ref.wav"
     ref_file.write_bytes(b"fake-audio")
@@ -275,7 +335,9 @@ def test_tts_api_synthesize_ok(tmp_path):
 
     fake_client = _FakeClient(SimpleNamespace(status_code=200, content=b"RIFF...data"))
     with patch("httpx.Client", return_value=fake_client):
-        synthesizer = ApiSynthesizer(base_url="http://localhost:8000", api_key="k", model_name="voxcpm2")
+        synthesizer = ApiSynthesizer(
+            base_url="http://localhost:8000", api_key="k", model_name="voxcpm2"
+        )
         assert isinstance(synthesizer, Synthesizer)
         ok = synthesizer.synthesize("你好", str(ref_file), str(output))
 
@@ -306,8 +368,14 @@ def test_tts_api_ref_audio_passthrough_url(tmp_path):
 
 # ── 注册表 ──
 
+
 def test_registry_transcriber_funasr():
-    spec = TranscriptSpec(backend=ASRBackend.FUNASR, diarize=True, max_speakers=3, model_name="paraformer-zh")
+    spec = TranscriptSpec(
+        backend=ASRBackend.FUNASR,
+        diarize=True,
+        max_speakers=3,
+        model_name="paraformer-zh",
+    )
     adapter = get_transcriber(spec)
     assert isinstance(adapter, FunAsrTranscriber)
     assert adapter.enable_diarization is True
@@ -315,7 +383,9 @@ def test_registry_transcriber_funasr():
 
 
 def test_registry_transcriber_whisper():
-    spec = TranscriptSpec(backend=ASRBackend.WHISPER, compute_type="int8", language="en")
+    spec = TranscriptSpec(
+        backend=ASRBackend.WHISPER, compute_type="int8", language="en"
+    )
     adapter = get_transcriber(spec)
     assert isinstance(adapter, WhisperTranscriber)
     assert adapter.compute_type == "int8"
@@ -331,7 +401,9 @@ def test_registry_synthesizer_local():
 
 
 def test_registry_synthesizer_api():
-    spec = TTSSpec(mode=TTSMode.API, api_base_url="http://srv:8000", api_model_name="m2")
+    spec = TTSSpec(
+        mode=TTSMode.API, api_base_url="http://srv:8000", api_model_name="m2"
+    )
     adapter = get_synthesizer(spec)
     assert isinstance(adapter, ApiSynthesizer)
     assert adapter.base_url == "http://srv:8000"
@@ -339,6 +411,7 @@ def test_registry_synthesizer_api():
 
 def test_registry_unknown_raises(monkeypatch):
     from videodub.backends import registry
+
     monkeypatch.delitem(registry.TRANSCRIBER_REGISTRY, "funasr")
     with pytest.raises(ValueError, match="不支持的 ASR 后端"):
         get_transcriber(TranscriptSpec(backend=ASRBackend.FUNASR))

@@ -40,13 +40,22 @@ def build_mix_invocation(
     if plan.mode is MixMode.FULL_REPLACE:
         sample_rate = plan.output_sample_rate
         input_arguments += [
-            "-f", "lavfi", "-t", f"{duration:.3f}", "-i", f"anullsrc={sample_rate}:cl=mono",
+            "-f",
+            "lavfi",
+            "-t",
+            f"{duration:.3f}",
+            "-i",
+            f"anullsrc={sample_rate}:cl=mono",
         ]
         filter_expressions.append("[1:a]acopy[base]")
         mix_labels.append("[base]")
         next_index = 2
     elif plan.mode is MixMode.KEEP_BACKGROUND:
-        ratio = plan.background_volume_ratio if plan.background_volume_ratio is not None else 0.2
+        ratio = (
+            plan.background_volume_ratio
+            if plan.background_volume_ratio is not None
+            else 0.2
+        )
         filter_expressions.append(
             f"[0:a]aformat=sample_rates={plan.output_sample_rate}:channel_layouts=mono,"
             f"volume={ratio}[base]"

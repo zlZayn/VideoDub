@@ -42,15 +42,27 @@ from videodub.utils.logger import log_error, log_success, log_warning
 
 def build_parser(parser) -> None:
     parser.add_argument("input", help="台词 JSON（01_transcript.json）")
-    parser.add_argument("-o", "--output", default=None,
-                        help="输出路径（默认：输入为 01_* 时 → 同目录 02_labeled.json，否则 <输入名>_labeled.json）")
-    parser.add_argument("--media", default=None, help="原视频/音频路径（提供后可用 p 命令试听句子）")
-    parser.add_argument("--apply", default=None, metavar="FILE", help="跳过交互，从 JSON 回填说话人（稀疏合并）")
+    parser.add_argument(
+        "-o",
+        "--output",
+        default=None,
+        help="输出路径（默认：输入为 01_* 时 → 同目录 02_labeled.json，否则 <输入名>_labeled.json）",
+    )
+    parser.add_argument(
+        "--media", default=None, help="原视频/音频路径（提供后可用 p 命令试听句子）"
+    )
+    parser.add_argument(
+        "--apply",
+        default=None,
+        metavar="FILE",
+        help="跳过交互，从 JSON 回填说话人（稀疏合并）",
+    )
 
     parser.set_defaults(func=_run)
 
 
 # ── 文件读写 ──
+
 
 def _load_json_list(path: str) -> list[dict]:
     """读取 JSON 数组（供回填文件使用，只要求是对象列表）"""
@@ -64,8 +76,12 @@ def _load_json_list(path: str) -> list[dict]:
 def _load_items(path: str) -> list[dict]:
     """读取并校验台词 JSON（列表，每项含 start/end/text）"""
     data = _load_json_list(path)
-    if any("start" not in item or "end" not in item or "text" not in item for item in data):
-        raise ValueError(f"{path} 不是合法的台词 JSON（应为包含 start/end/text 的列表）")
+    if any(
+        "start" not in item or "end" not in item or "text" not in item for item in data
+    ):
+        raise ValueError(
+            f"{path} 不是合法的台词 JSON（应为包含 start/end/text 的列表）"
+        )
     return data
 
 
@@ -76,12 +92,14 @@ def _clean_speaker(value, *, index: int, seg_id: str) -> str:
     if isinstance(value, str):
         raw = value.strip()
         if raw.startswith("SPEAKER_"):
-            num = raw[len("SPEAKER_"):]
+            num = raw[len("SPEAKER_") :]
             if num.isdigit():
                 return f"SPEAKER_{int(num)}"
         elif raw.isdigit():
             return f"SPEAKER_{int(raw)}"
-    raise ValueError(f"第 {index} 句（{seg_id}）的 speaker 无法解析: {value!r}（请填 0/1/2… 或 SPEAKER_0）")
+    raise ValueError(
+        f"第 {index} 句（{seg_id}）的 speaker 无法解析: {value!r}（请填 0/1/2… 或 SPEAKER_0）"
+    )
 
 
 def _run_apply(base_items: list[dict], apply_path: str) -> list[dict]:
@@ -109,11 +127,15 @@ def _run_apply(base_items: list[dict], apply_path: str) -> list[dict]:
 
 def _write(output_path: Path, items: list[dict]) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
+    output_path.write_text(
+        json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
 
 def _summarize(items: list[dict]) -> None:
-    counts = collections.Counter(seg.get("speaker") for seg in items if seg.get("speaker"))
+    counts = collections.Counter(
+        seg.get("speaker") for seg in items if seg.get("speaker")
+    )
     if not counts:
         log_warning("没有任何说话人标注被写入")
         return
@@ -132,8 +154,8 @@ _SPK_COLORS = {
     "5": "red",
 }
 _UNKNOWN_COLOR = "grey50"
-_WINDOW_HALF = 3        # 光标上下各看 3 句，避免整表刷屏
-_BODY_WIDTH = 48        # 台词显示宽度（中文按 2 宽截断）
+_WINDOW_HALF = 3  # 光标上下各看 3 句，避免整表刷屏
+_BODY_WIDTH = 48  # 台词显示宽度（中文按 2 宽截断）
 _console = Console(soft_wrap=True)
 
 
@@ -160,7 +182,9 @@ def _spk_tag(key: str) -> Text:
 
 def _status_bar(items: list[dict]) -> Text:
     """底部统计条：说话人分布 + 未标注数"""
-    counts: dict[str, int] = collections.Counter(_short(seg.get("speaker")) for seg in items)
+    counts: dict[str, int] = collections.Counter(
+        _short(seg.get("speaker")) for seg in items
+    )
     parts: list[Text] = []
     for key in ("0", "1", "2", "3", "4", "5", "?"):
         if key in counts:
@@ -206,10 +230,13 @@ def _print_overview(items: list[dict]) -> None:
     lines: list[Text] = []
     for key in order:
         tag = _spk_tag(key)
-        nums = Text(" | ".join(
-            " ".join(f"{n:02d}" for n in groups[key][i:i + 15])
-            for i in range(0, len(groups[key]), 15)
-        ), style=_spk_color(key))
+        nums = Text(
+            " | ".join(
+                " ".join(f"{n:02d}" for n in groups[key][i : i + 15])
+                for i in range(0, len(groups[key]), 15)
+            ),
+            style=_spk_color(key),
+        )
         lines.append(Text("  ").join([tag, Text("  "), nums]))
     panel = Panel(
         Text("\n\n").join(lines) if lines else Text("（无句子）"),
@@ -225,7 +252,11 @@ def _print_window(items: list[dict], cursor: int) -> None:
     lo = max(1, cursor - _WINDOW_HALF)
     hi = min(total, cursor + _WINDOW_HALF)
     for index in range(lo, hi + 1):
-        _console.print(_segment_line(items[index - 1], index, cursor=cursor if index == cursor else None))
+        _console.print(
+            _segment_line(
+                items[index - 1], index, cursor=cursor if index == cursor else None
+            )
+        )
 
 
 def _print_focused(items: list[dict], cursor: int) -> None:
@@ -290,7 +321,9 @@ def _renumber_ids(items: list[dict]) -> None:
         seg["id"] = f"seg_{index:04d}"
 
 
-def _merge_segments(items: list[dict], numbers: list[int], text: str | None = None) -> None:
+def _merge_segments(
+    items: list[dict], numbers: list[int], text: str | None = None
+) -> None:
     """把连续编号的句子合并为一句：时间取并集、说话人取第一个非空。
 
     text 缺省时按原样拼接各句文本；给出时直接采用（合并顺带修标点）。
@@ -310,12 +343,13 @@ def _merge_segments(items: list[dict], numbers: list[int], text: str | None = No
         merged.pop("speaker", None)
     else:
         merged["speaker"] = speaker
-    items[numbers[0] - 1:numbers[-1]] = [merged]
+    items[numbers[0] - 1 : numbers[-1]] = [merged]
     _renumber_ids(items)
 
 
-def _split_segment(items: list[dict], number: int, text_a: str, text_b: str,
-                   at_time: float | None) -> float:
+def _split_segment(
+    items: list[dict], number: int, text_a: str, text_b: str, at_time: float | None
+) -> float:
     """把第 number 句拆成两句（两半继承原说话人），返回切分点秒数。
 
     at_time 缺省时按两段文本字数比例估算。校验失败抛 ValueError 且不修改 items。
@@ -325,7 +359,9 @@ def _split_segment(items: list[dict], number: int, text_a: str, text_b: str,
     if at_time is None:
         at_time = start + (end - start) * len(text_a) / (len(text_a) + len(text_b))
     if not start < at_time < end:
-        raise ValueError(f"切分点 {at_time:g}s 不在第 {number} 句范围 {start:g}-{end:g}s 内")
+        raise ValueError(
+            f"切分点 {at_time:g}s 不在第 {number} 句范围 {start:g}-{end:g}s 内"
+        )
     at_time = round(at_time, 3)
     first = dict(seg)
     first["end"] = at_time
@@ -333,7 +369,7 @@ def _split_segment(items: list[dict], number: int, text_a: str, text_b: str,
     second = dict(seg)
     second["start"] = at_time
     second["text"] = text_b
-    items[number - 1:number] = [first, second]
+    items[number - 1 : number] = [first, second]
     _renumber_ids(items)
     return at_time
 
@@ -350,7 +386,10 @@ def _apply_edit(items: list[dict], numbers: list[int], spk: int) -> bool:
     target = f"SPEAKER_{spk}"
     batch = [n for n in numbers if items[n - 1].get("speaker") != target]
     if not batch:
-        _console.print(f"  ← 第 {'、'.join(map(str, numbers))} 句已全是 {target}，未改动", style="yellow")
+        _console.print(
+            f"  ← 第 {'、'.join(map(str, numbers))} 句已全是 {target}，未改动",
+            style="yellow",
+        )
         return False
     for n in batch:
         items[n - 1]["speaker"] = target
@@ -369,8 +408,17 @@ def _play(media: str, items: list[dict], numbers: list[int]) -> None:
         duration = max(float(segment["end"]) - float(segment["start"]), 0.1)
         _console.print(f"  试听 {n:4d}  {segment['text']}", style="cyan")
         subprocess.run(
-            [ffplay, "-autoexit", "-loglevel", "quiet",
-             "-ss", str(segment["start"]), "-t", f"{duration:.2f}", media],
+            [
+                ffplay,
+                "-autoexit",
+                "-loglevel",
+                "quiet",
+                "-ss",
+                str(segment["start"]),
+                "-t",
+                f"{duration:.2f}",
+                media,
+            ],
             check=False,
         )
 
@@ -382,7 +430,8 @@ def _print_help(console: Console) -> None:
     """命令帮助：先讲清楚概念，再按用途分组排版"""
     intro = Text.assemble(
         "命令帮助 · ",
-        ("▶ 当前句", "bold yellow"), " = 光标所在句（高亮）。说话人 0/1/2 是自动分人得到的角色编号。",
+        ("▶ 当前句", "bold yellow"),
+        " = 光标所在句（高亮）。说话人 0/1/2 是自动分人得到的角色编号。",
     )
 
     def group(title: str, rows) -> Panel:
@@ -391,26 +440,36 @@ def _print_help(console: Console) -> None:
         table.add_column(overflow="fold")
         for cmd, desc in rows:
             table.add_row(cmd, desc)
-        return Panel(table, title=f"[bold]{title}[/]", border_style="dim",
-                     padding=(0, 1))
+        return Panel(
+            table, title=f"[bold]{title}[/]", border_style="dim", padding=(0, 1)
+        )
 
-    spk = group("分人（视频里有几个人，就标几）", [
-        ("0 / 1 / 2", "当前句分给说话人 0/1/2，并跳到下一句（最常用）"),
-        ("13=0", "指定句改人：13=0 · 13,17=0 批量 · 10-18=1 区间"),
-    ])
-    seg = group("断句（识别已预切，碎/长再调）", [
-        ("m 3,4", "合并碎句；m 3-5 文本 可带合并后全文修标点"),
-        ("x 3 A|B", "一句拆两句；x 3 5.5 A|B 可指定切分秒数"),
-        ("d 13", "删除噪声/幻觉句（支持批量/区间）"),
-    ])
-    misc = group("复查与收尾", [
-        ("15", "直接输入编号/区间/列表 = 跳到该句，如 15 · 10-18 · 3,8"),
-        ("l [编号]", "同定位；无编号重看分组概览"),
-        ("p 13", "试听原视频对应片段（需 --media）"),
-        ("r", "回到第 1 句重头审阅"),
-        ("u", "撤销上一步"),
-        ("? / ？", "本帮助 · w 保存退出 · q 放弃退出"),
-    ])
+    spk = group(
+        "分人（视频里有几个人，就标几）",
+        [
+            ("0 / 1 / 2", "当前句分给说话人 0/1/2，并跳到下一句（最常用）"),
+            ("13=0", "指定句改人：13=0 · 13,17=0 批量 · 10-18=1 区间"),
+        ],
+    )
+    seg = group(
+        "断句（识别已预切，碎/长再调）",
+        [
+            ("m 3,4", "合并碎句；m 3-5 文本 可带合并后全文修标点"),
+            ("x 3 A|B", "一句拆两句；x 3 5.5 A|B 可指定切分秒数"),
+            ("d 13", "删除噪声/幻觉句（支持批量/区间）"),
+        ],
+    )
+    misc = group(
+        "复查与收尾",
+        [
+            ("15", "直接输入编号/区间/列表 = 跳到该句，如 15 · 10-18 · 3,8"),
+            ("l [编号]", "同定位；无编号重看分组概览"),
+            ("p 13", "试听原视频对应片段（需 --media）"),
+            ("r", "回到第 1 句重头审阅"),
+            ("u", "撤销上一步"),
+            ("? / ？", "本帮助 · w 保存退出 · q 放弃退出"),
+        ],
+    )
     console.print(intro)
     console.print(spk)
     console.print(seg)
@@ -506,7 +565,10 @@ def _run_repl(items: list[dict], media: str | None, output_path: Path) -> bool:
         if cmd == "m" or cmd.startswith("m "):
             arg = line[1:].strip()
             if not arg:
-                _console.print("  ← 用法: m <编号> [合并后文本]（编号间不加空格），如 m 3,4 · m 3-5 我们这里是药店，买酒到隔壁。", style="yellow")
+                _console.print(
+                    "  ← 用法: m <编号> [合并后文本]（编号间不加空格），如 m 3,4 · m 3-5 我们这里是药店，买酒到隔壁。",
+                    style="yellow",
+                )
                 continue
             # 第一个空白分隔的 token 是编号选择器，其余是可选的合并后完整文本
             head, _, tail = arg.partition(" ")
@@ -524,20 +586,26 @@ def _run_repl(items: list[dict], media: str | None, output_path: Path) -> bool:
                 continue
             commit(snapshot, old_cursor)
             cursor = min(numbers[0], len(items))
-            _console.print(f"  ✓ 已合并 {len(numbers)} 句 → 第 {cursor} 句", style="green")
+            _console.print(
+                f"  ✓ 已合并 {len(numbers)} 句 → 第 {cursor} 句", style="green"
+            )
             refresh()
             continue
 
         if cmd == "x" or cmd.startswith("x "):
-            usage = ("  ← 用法: x <编号> <文本A>|<文本B>，如 x 3 我们这里是药店|买酒到隔壁\n"
-                     "        指定切分秒数: x <编号> <秒> <文本A>|<文本B>")
+            usage = (
+                "  ← 用法: x <编号> <文本A>|<文本B>，如 x 3 我们这里是药店|买酒到隔壁\n"
+                "        指定切分秒数: x <编号> <秒> <文本A>|<文本B>"
+            )
             parts = line[1:].strip().split(None, 1)
             if len(parts) < 2 or not parts[0].isdigit():
                 _console.print(usage, style="yellow")
                 continue
             number = int(parts[0])
             if not 1 <= number <= len(items):
-                _console.print(f"  ← 编号越界: {number}（共 {len(items)} 句）", style="yellow")
+                _console.print(
+                    f"  ← 编号越界: {number}（共 {len(items)} 句）", style="yellow"
+                )
                 continue
             tail = parts[1].strip()
             at_time = None
@@ -561,14 +629,19 @@ def _run_repl(items: list[dict], media: str | None, output_path: Path) -> bool:
                 continue
             commit(snapshot, old_cursor)
             cursor = min(number, len(items))
-            _console.print(f"  ✓ 第 {number} 句已拆为两句（切分点 {at:g}s）", style="green")
+            _console.print(
+                f"  ✓ 第 {number} 句已拆为两句（切分点 {at:g}s）", style="green"
+            )
             refresh()
             continue
 
         if cmd == "d" or cmd.startswith("d "):
             arg = line[1:].strip()
             if not arg:
-                _console.print("  ← 用法: d <编号>（删除句子），如 d 13 · d 13,17 · d 10-12", style="yellow")
+                _console.print(
+                    "  ← 用法: d <编号>（删除句子），如 d 13 · d 13,17 · d 10-12",
+                    style="yellow",
+                )
                 continue
             try:
                 numbers = _parse_selector(arg, len(items))
@@ -585,7 +658,10 @@ def _run_repl(items: list[dict], media: str | None, output_path: Path) -> bool:
 
         if cmd == "p" or cmd.startswith("p "):
             if not media:
-                _console.print("  ← 未提供 --media，无法试听（用法: videodub label <json> --media <视频>）", style="yellow")
+                _console.print(
+                    "  ← 未提供 --media，无法试听（用法: videodub label <json> --media <视频>）",
+                    style="yellow",
+                )
                 continue
             if not Path(media).exists():
                 _console.print(f"  ← 媒体文件不存在: {media}", style="yellow")
@@ -619,7 +695,10 @@ def _run_repl(items: list[dict], media: str | None, output_path: Path) -> bool:
             selector, _, spk = line.partition("=")
             selector, spk = selector.strip(), spk.strip()
             if not selector or not spk.isdigit():
-                _console.print("  ← 语法: <编号>=<说话人>，如 13=0 · 13,17=0 · 10-18=1", style="yellow")
+                _console.print(
+                    "  ← 语法: <编号>=<说话人>，如 13=0 · 13,17=0 · 10-18=1",
+                    style="yellow",
+                )
                 continue
             try:
                 numbers = _parse_selector(selector, len(items))
@@ -649,7 +728,9 @@ def _run_repl(items: list[dict], media: str | None, output_path: Path) -> bool:
                 cursor = number
                 refresh()
                 continue
-            _console.print(f"  ← 编号越界: {number}（共 {len(items)} 句）", style="yellow")
+            _console.print(
+                f"  ← 编号越界: {number}（共 {len(items)} 句）", style="yellow"
+            )
             continue
 
         # 直接输区间/列表（如 10-18 · 13,17）也视为定位跳转（同 l N）
@@ -667,6 +748,7 @@ def _run_repl(items: list[dict], media: str | None, output_path: Path) -> bool:
 
 
 # ── 入口 ──
+
 
 def _default_output(input_path: Path) -> Path:
     """默认输出：01_* → 同目录 02_labeled.json；已是 labeled 文件 → 就地覆盖；其他 → <名>_labeled.json"""

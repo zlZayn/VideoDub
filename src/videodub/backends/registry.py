@@ -35,7 +35,9 @@ def get_transcriber(spec: TranscriptSpec) -> Transcriber:
     try:
         adapter_class = TRANSCRIBER_REGISTRY[backend]
     except KeyError:
-        raise ValueError(f"不支持的 ASR 后端: {backend}，可选: {', '.join(TRANSCRIBER_REGISTRY)}") from None
+        raise ValueError(
+            f"不支持的 ASR 后端: {backend}，可选: {', '.join(TRANSCRIBER_REGISTRY)}"
+        ) from None
 
     model_name = resolve_model_name(spec.backend, spec.model_name)
     if spec.backend is ASRBackend.FUNASR:
@@ -59,8 +61,12 @@ def get_synthesizer(spec: TTSSpec) -> Synthesizer:
     try:
         adapter_class = SYNTHESIZER_REGISTRY[mode]
     except KeyError:
-        raise ValueError(f"不支持的 TTS 模式: {mode}，可选: {', '.join(SYNTHESIZER_REGISTRY)}") from None
+        raise ValueError(
+            f"不支持的 TTS 模式: {mode}，可选: {', '.join(SYNTHESIZER_REGISTRY)}"
+        ) from None
 
     if spec.mode is TTSMode.LOCAL:
         return adapter_class(device=spec.device, inference_steps=spec.inference_steps)
-    return adapter_class(base_url=spec.api_base_url, api_key=spec.api_key, model_name=spec.api_model_name)
+    return adapter_class(
+        base_url=spec.api_base_url, api_key=spec.api_key, model_name=spec.api_model_name
+    )

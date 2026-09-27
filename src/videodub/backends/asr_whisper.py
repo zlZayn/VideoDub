@@ -57,11 +57,16 @@ class WhisperTranscriber:
         from faster_whisper import WhisperModel
         from modelscope.hub.snapshot_download import snapshot_download
 
-        log_stage_header("ASR", f"faster-whisper ({self.model_name}), 设备: {self.device}/{self.compute_type}")
+        log_stage_header(
+            "ASR",
+            f"faster-whisper ({self.model_name}), 设备: {self.device}/{self.compute_type}",
+        )
 
         log("ASR", "从魔搭社区下载/加载模型 ...")
         local_model_path = snapshot_download(modelscope_id)
-        whisper_model = WhisperModel(local_model_path, device=self.device, compute_type=self.compute_type)
+        whisper_model = WhisperModel(
+            local_model_path, device=self.device, compute_type=self.compute_type
+        )
 
         log("ASR", "识别中 ...")
         segments_iterator, recognition_info = whisper_model.transcribe(
@@ -74,18 +79,25 @@ class WhisperTranscriber:
 
         recognized_segments = []
         for segment in segments_iterator:
-            recognized_segments.append({
-                "start": segment.start,
-                "end": segment.end,
-                "text": segment.text.strip(),
-            })
+            recognized_segments.append(
+                {
+                    "start": segment.start,
+                    "end": segment.end,
+                    "text": segment.text.strip(),
+                }
+            )
 
         language = getattr(recognition_info, "language", None)
         probability = getattr(recognition_info, "language_probability", None)
-        log("ASR", f"检测语言: {language}"
-            + (f" (置信度 {probability:.0%})" if probability is not None else ""))
+        log(
+            "ASR",
+            f"检测语言: {language}"
+            + (f" (置信度 {probability:.0%})" if probability is not None else ""),
+        )
         log("ASR", f"识别到 {len(recognized_segments)} 句台词:")
         for seg in recognized_segments:
             log("ASR", f"  [{seg['start']:6.2f}s - {seg['end']:6.2f}s] {seg['text']}")
 
-        return Transcript.from_dicts(recognized_segments, language=language, source="whisper")
+        return Transcript.from_dicts(
+            recognized_segments, language=language, source="whisper"
+        )

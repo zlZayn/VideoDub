@@ -18,13 +18,19 @@ def build_parser() -> argparse.ArgumentParser:
         prog="videodub",
         description="视频音色替换 — 本地 VoxCPM2 音色克隆 + 逐句时长对齐对口型",
     )
-    parser.add_argument("--version", action="version", version=f"videodub {__version__}")
+    parser.add_argument(
+        "--version", action="version", version=f"videodub {__version__}"
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    run_parser = subparsers.add_parser("run", help="执行配音任务", description=run_cmd.__doc__)
+    run_parser = subparsers.add_parser(
+        "run", help="执行配音任务", description=run_cmd.__doc__
+    )
     run_cmd.build_parser(run_parser)
 
-    transcribe_parser = subparsers.add_parser("transcribe", help="仅语音识别输出台词 JSON")
+    transcribe_parser = subparsers.add_parser(
+        "transcribe", help="仅语音识别输出台词 JSON"
+    )
     transcribe_cmd.build_parser(transcribe_parser)
 
     label_parser = subparsers.add_parser("label", help="人工校对说话人与断句")

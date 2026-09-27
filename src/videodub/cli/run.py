@@ -20,51 +20,123 @@ from videodub.utils.logger import log_error
 
 def build_parser(parser) -> None:
     """run 子命令参数（CLI 优先级 > job.toml > 默认值）"""
-    parser.add_argument("input", nargs="?", default=None, help="输入视频/音频路径（--job 提供时可省略）")
+    parser.add_argument(
+        "input", nargs="?", default=None, help="输入视频/音频路径（--job 提供时可省略）"
+    )
     parser.add_argument("--job", default=None, help="job.toml 配置文件路径")
 
     out_group = parser.add_argument_group("输出")
-    out_group.add_argument("-o", "--output", default=None,
-                           help="输出路径（默认 output/<输入名>/03_成品.mp4；.wav 后缀出音频）")
+    out_group.add_argument(
+        "-o",
+        "--output",
+        default=None,
+        help="输出路径（默认 output/<输入名>/03_成品.mp4；.wav 后缀出音频）",
+    )
     out_group.add_argument("--audio-only", action="store_true", help="仅输出配音音频")
 
     voice_group = parser.add_argument_group("参考音色（二选一）")
-    voice_group.add_argument("--ref-audio", default=None, help="全局参考音频路径（所有说话人同一音色）")
-    voice_group.add_argument("--ref-audio-0", default=None, help="说话人 SPEAKER_0 的参考音频（不指定则保留原声）")
-    voice_group.add_argument("--ref-audio-1", default=None, help="说话人 SPEAKER_1 的参考音频（不指定则保留原声）")
+    voice_group.add_argument(
+        "--ref-audio", default=None, help="全局参考音频路径（所有说话人同一音色）"
+    )
+    voice_group.add_argument(
+        "--ref-audio-0",
+        default=None,
+        help="说话人 SPEAKER_0 的参考音频（不指定则保留原声）",
+    )
+    voice_group.add_argument(
+        "--ref-audio-1",
+        default=None,
+        help="说话人 SPEAKER_1 的参考音频（不指定则保留原声）",
+    )
 
     src_group = parser.add_argument_group("台词来源（三选一，默认 ASR）")
-    src_group.add_argument("--segments-json", default=None, help="已识别台词 JSON（跳过 ASR）")
-    src_group.add_argument("--subtitle", default=None, help="字幕文件 SRT/ASS（跳过 ASR）")
+    src_group.add_argument(
+        "--segments-json", default=None, help="已识别台词 JSON（跳过 ASR）"
+    )
+    src_group.add_argument(
+        "--subtitle", default=None, help="字幕文件 SRT/ASS（跳过 ASR）"
+    )
 
     asr_group = parser.add_argument_group("ASR 参数")
-    asr_group.add_argument("--asr-backend", default=None, choices=["funasr", "whisper"], help="ASR 后端（默认 funasr）")
-    asr_group.add_argument("--asr-model", default=None, help="ASR 模型名（默认 paraformer-zh / distil-large-v3）")
-    asr_group.add_argument("--asr-device", default=None, choices=["cpu", "cuda"], help="ASR 设备（默认 cpu）")
-    asr_group.add_argument("--asr-compute-type", default=None, help="whisper 计算精度（默认 float16）")
-    asr_group.add_argument("--language", default=None, help="源语言代码（zh/en/ja...，whisper 用）")
+    asr_group.add_argument(
+        "--asr-backend",
+        default=None,
+        choices=["funasr", "whisper"],
+        help="ASR 后端（默认 funasr）",
+    )
+    asr_group.add_argument(
+        "--asr-model",
+        default=None,
+        help="ASR 模型名（默认 paraformer-zh / distil-large-v3）",
+    )
+    asr_group.add_argument(
+        "--asr-device",
+        default=None,
+        choices=["cpu", "cuda"],
+        help="ASR 设备（默认 cpu）",
+    )
+    asr_group.add_argument(
+        "--asr-compute-type", default=None, help="whisper 计算精度（默认 float16）"
+    )
+    asr_group.add_argument(
+        "--language", default=None, help="源语言代码（zh/en/ja...，whisper 用）"
+    )
     asr_group.add_argument("--diarize", action="store_true", help="启用说话人分离")
-    asr_group.add_argument("--max-speakers", type=int, default=None, help="最大说话人数（默认 2）")
+    asr_group.add_argument(
+        "--max-speakers", type=int, default=None, help="最大说话人数（默认 2）"
+    )
 
     tts_group = parser.add_argument_group("TTS 参数")
-    tts_group.add_argument("--tts-mode", default=None, choices=["local", "api"], help="音色克隆模式（默认 local）")
-    tts_group.add_argument("--tts-device", default=None, choices=["cpu", "cuda"], help="TTS 设备（默认 cpu）")
-    tts_group.add_argument("--tts-steps", type=int, default=None, help="VoxCPM2 推理步数（默认 10）")
+    tts_group.add_argument(
+        "--tts-mode",
+        default=None,
+        choices=["local", "api"],
+        help="音色克隆模式（默认 local）",
+    )
+    tts_group.add_argument(
+        "--tts-device",
+        default=None,
+        choices=["cpu", "cuda"],
+        help="TTS 设备（默认 cpu）",
+    )
+    tts_group.add_argument(
+        "--tts-steps", type=int, default=None, help="VoxCPM2 推理步数（默认 10）"
+    )
     tts_group.add_argument("--api-base", default=None, help="TTS API 地址（api 模式）")
     tts_group.add_argument("--api-key", default=None, help="TTS API 密钥（api 模式）")
-    tts_group.add_argument("--api-model", default=None, help="TTS API 模型名（api 模式）")
+    tts_group.add_argument(
+        "--api-model", default=None, help="TTS API 模型名（api 模式）"
+    )
 
     mix_group = parser.add_argument_group("混音参数")
-    mix_group.add_argument("--keep-bg", action="store_true", help="保留原背景音（变相 mix.policy=keep_background）")
-    mix_group.add_argument("--bg-volume", type=float, default=None, help="背景音量比例（默认 0.2）")
+    mix_group.add_argument(
+        "--keep-bg",
+        action="store_true",
+        help="保留原背景音（变相 mix.policy=keep_background）",
+    )
+    mix_group.add_argument(
+        "--bg-volume", type=float, default=None, help="背景音量比例（默认 0.2）"
+    )
 
     run_group = parser.add_argument_group("运行控制")
-    run_group.add_argument("--dry-run", action="store_true", help="只出计划，不跑重模型不渲染")
-    run_group.add_argument("--resume", action="store_true", help="启用缓存复用（等价 --cache 开）")
-    run_group.add_argument("--no-cache", action="store_true", help="禁用 ASR/TTS 结果缓存")
-    run_group.add_argument("--keep-temp", action="store_true", help="保留运行目录重产物")
-    run_group.add_argument("--print-ffmpeg", action="store_true", help="回显每条 ffmpeg 命令")
-    run_group.add_argument("--verbose", action="store_true", help="冗余日志（暂未启用额外输出）")
+    run_group.add_argument(
+        "--dry-run", action="store_true", help="只出计划，不跑重模型不渲染"
+    )
+    run_group.add_argument(
+        "--resume", action="store_true", help="启用缓存复用（等价 --cache 开）"
+    )
+    run_group.add_argument(
+        "--no-cache", action="store_true", help="禁用 ASR/TTS 结果缓存"
+    )
+    run_group.add_argument(
+        "--keep-temp", action="store_true", help="保留运行目录重产物"
+    )
+    run_group.add_argument(
+        "--print-ffmpeg", action="store_true", help="回显每条 ffmpeg 命令"
+    )
+    run_group.add_argument(
+        "--verbose", action="store_true", help="冗余日志（暂未启用额外输出）"
+    )
 
     parser.set_defaults(func=_run)
 
@@ -164,7 +236,9 @@ def _build_overrides(args) -> dict:
 def _run(args) -> int:
     """run 子命令执行体"""
     if not args.input and not args.job:
-        raise SystemExit("必须提供输入文件或 --job 配置（videodub run <input> 或 videodub run --job job.toml）")
+        raise SystemExit(
+            "必须提供输入文件或 --job 配置（videodub run <input> 或 videodub run --job job.toml）"
+        )
 
     try:
         job = load_job(args.job, _build_overrides(args))

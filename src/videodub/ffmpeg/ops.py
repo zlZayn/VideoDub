@@ -49,20 +49,40 @@ def stretch_audio_to_duration(
         return
 
     run_ffmpeg_command(
-        ["-y", "-i", input_audio_path,
-         "-filter:a", ",".join(build_atempo_chain(speed_ratio)),
-         "-vn", output_audio_path],
-        f"时域拉伸 ×{1/speed_ratio:.2f}"
+        [
+            "-y",
+            "-i",
+            input_audio_path,
+            "-filter:a",
+            ",".join(build_atempo_chain(speed_ratio)),
+            "-vn",
+            output_audio_path,
+        ],
+        f"时域拉伸 ×{1 / speed_ratio:.2f}",
     )
 
 
 def measure_average_volume(audio_file_path: str) -> float:
     """测量音频的平均音量（dB），使用 volumedetect 滤镜，失败返回 0.0"""
     import subprocess
+
     result = subprocess.run(
-        ["ffmpeg", "-i", audio_file_path, "-af", "volumedetect",
-         "-vn", "-sn", "-dn", "-f", "null", "NUL"],
-        capture_output=True, text=True, check=False
+        [
+            "ffmpeg",
+            "-i",
+            audio_file_path,
+            "-af",
+            "volumedetect",
+            "-vn",
+            "-sn",
+            "-dn",
+            "-f",
+            "null",
+            "NUL",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
     )
     output = result.stderr + result.stdout
     for line in output.split("\n"):
@@ -97,21 +117,29 @@ def post_process_audio(
     if abs(volume_gain_db) > 0.1:
         filter_chain.append(f"volume={volume_gain_db:.2f}dB")
     if fade_in_ms > 0 and audio_duration > fade_in_ms / 1000.0:
-        filter_chain.append(f"afade=t=in:st=0:d={fade_in_ms/1000.0:.3f}")
+        filter_chain.append(f"afade=t=in:st=0:d={fade_in_ms / 1000.0:.3f}")
     if fade_out_ms > 0 and audio_duration > fade_out_ms / 1000.0:
         fade_start = max(0, audio_duration - fade_out_ms / 1000.0)
-        filter_chain.append(f"afade=t=out:st={fade_start:.3f}:d={fade_out_ms/1000.0:.3f}")
+        filter_chain.append(
+            f"afade=t=out:st={fade_start:.3f}:d={fade_out_ms / 1000.0:.3f}"
+        )
 
     if not filter_chain:
         shutil.copy2(input_audio_path, output_audio_path)
         return
 
     run_ffmpeg_command(
-        ["-y", "-i", input_audio_path,
-         "-filter:a", ",".join(filter_chain),
-         "-vn", output_audio_path],
+        [
+            "-y",
+            "-i",
+            input_audio_path,
+            "-filter:a",
+            ",".join(filter_chain),
+            "-vn",
+            output_audio_path,
+        ],
         f"音量匹配(当前{current_volume:.1f}dB→目标{target_volume_db:.1f}dB, 增益{volume_gain_db:+.1f}dB)"
-        f" + 淡入{fade_in_ms}ms/淡出{fade_out_ms}ms"
+        f" + 淡入{fade_in_ms}ms/淡出{fade_out_ms}ms",
     )
 
 
@@ -127,12 +155,19 @@ def convert_audio_to_wav(
 ) -> None:
     """转换音频格式为 WAV（m4a/mp3/aac 等 → pcm_s16le）"""
     run_ffmpeg_command(
-        ["-y", "-i", input_audio_path,
-         "-acodec", "pcm_s16le",
-         "-ar", str(sample_rate),
-         "-ac", str(channels),
-         output_wav_path],
-        f"音频格式转换 → WAV ({sample_rate}Hz, {channels}声道)"
+        [
+            "-y",
+            "-i",
+            input_audio_path,
+            "-acodec",
+            "pcm_s16le",
+            "-ar",
+            str(sample_rate),
+            "-ac",
+            str(channels),
+            output_wav_path,
+        ],
+        f"音频格式转换 → WAV ({sample_rate}Hz, {channels}声道)",
     )
 
 
@@ -145,5 +180,8 @@ def ensure_wav_format(audio_path: str, working_directory: str) -> str:
     basename = os.path.splitext(os.path.basename(audio_path))[0]
     converted_path = os.path.join(working_directory, f"{basename}_converted.wav")
     convert_audio_to_wav(audio_path, converted_path)
-    log("音频", f"参考音频格式 {ext} 不支持 soundfile，已自动转换为 WAV: {os.path.basename(converted_path)}")
+    log(
+        "音频",
+        f"参考音频格式 {ext} 不支持 soundfile，已自动转换为 WAV: {os.path.basename(converted_path)}",
+    )
     return converted_path

@@ -65,6 +65,7 @@ def _write_job(tmp_path, text=SAMPLE_TOML) -> str:
 
 # ── TOML 加载 ──
 
+
 def test_toml_load_full_job(media_files):
     job = load_job(_write_job(media_files))
     assert job.input.path.name == "input.mp4"
@@ -102,18 +103,24 @@ def test_cli_overrides_toml_deep(media_files):
 
 
 def test_cli_only_minimal(media_files):
-    job = load_job(None, cli_overrides={
-        "input": {"path": str(media_files / "input.mp4")},
-        "output": {"path": "out.mp4"},
-        "voice": {"ref_audio": str(media_files / "ref.wav")},
-    })
+    job = load_job(
+        None,
+        cli_overrides={
+            "input": {"path": str(media_files / "input.mp4")},
+            "output": {"path": "out.mp4"},
+            "voice": {"ref_audio": str(media_files / "ref.wav")},
+        },
+    )
     assert job.transcript.backend is ASRBackend.FUNASR
     assert job.mix.policy is MixPolicy.AUTO
 
 
 def test_speaker_map_in_toml(media_files):
     (media_files / "ref_a.wav").write_bytes(b"fake")
-    job = load_job(_write_job(media_files, """
+    job = load_job(
+        _write_job(
+            media_files,
+            """
 [input]
 path = "input.mp4"
 
@@ -123,13 +130,21 @@ path = "out.mp4"
 [voice.speaker_map]
 SPEAKER_0 = "ref_a.wav"
 SPEAKER_1 = "ref.wav"
-"""))
-    assert job.voice.speaker_map == {"SPEAKER_0": Path("ref_a.wav"), "SPEAKER_1": Path("ref.wav")}
+""",
+        )
+    )
+    assert job.voice.speaker_map == {
+        "SPEAKER_0": Path("ref_a.wav"),
+        "SPEAKER_1": Path("ref.wav"),
+    }
 
 
 def test_speaker_map_empty_string_means_keep_original(media_files):
     """TOML 没有 null：空字符串 = 保留原声（None），不再被当作路径校验"""
-    job = load_job(_write_job(media_files, """
+    job = load_job(
+        _write_job(
+            media_files,
+            """
 [input]
 path = "input.mp4"
 
@@ -139,68 +154,90 @@ path = "out.mp4"
 [voice.speaker_map]
 SPEAKER_0 = "ref.wav"
 SPEAKER_1 = ""
-"""))
+""",
+        )
+    )
     assert job.voice.speaker_map == {"SPEAKER_0": Path("ref.wav"), "SPEAKER_1": None}
 
 
 # ── 校验错误 ──
 
+
 def test_missing_voice_reference_raises(media_files):
     with pytest.raises(ValidationError, match="必须指定参考音色"):
-        load_job(None, cli_overrides={
-            "input": {"path": str(media_files / "input.mp4")},
-            "output": {"path": "out.mp4"},
-        })
+        load_job(
+            None,
+            cli_overrides={
+                "input": {"path": str(media_files / "input.mp4")},
+                "output": {"path": "out.mp4"},
+            },
+        )
 
 
 def test_both_refs_raises(media_files):
     with pytest.raises(ValidationError, match="二选一"):
-        load_job(None, cli_overrides={
-            "input": {"path": str(media_files / "input.mp4")},
-            "output": {"path": "out.mp4"},
-            "voice": {
-                "ref_audio": str(media_files / "ref.wav"),
-                "speaker_map": {"SPEAKER_0": str(media_files / "ref.wav")},
+        load_job(
+            None,
+            cli_overrides={
+                "input": {"path": str(media_files / "input.mp4")},
+                "output": {"path": "out.mp4"},
+                "voice": {
+                    "ref_audio": str(media_files / "ref.wav"),
+                    "speaker_map": {"SPEAKER_0": str(media_files / "ref.wav")},
+                },
             },
-        })
+        )
 
 
 def test_missing_input_file_raises(tmp_path):
     with pytest.raises(ValidationError, match="输入媒体不存在"):
-        load_job(None, cli_overrides={
-            "input": {"path": "no_such.mp4"},
-            "output": {"path": "out.mp4"},
-            "voice": {"ref_audio": str(tmp_path / "no_ref.wav")},
-        })
+        load_job(
+            None,
+            cli_overrides={
+                "input": {"path": "no_such.mp4"},
+                "output": {"path": "out.mp4"},
+                "voice": {"ref_audio": str(tmp_path / "no_ref.wav")},
+            },
+        )
 
 
 def test_transcript_source_requires_path(media_files):
     with pytest.raises(ValidationError, match="需要指定 path"):
-        load_job(None, cli_overrides={
-            "input": {"path": str(media_files / "input.mp4")},
-            "output": {"path": "out.mp4"},
-            "voice": {"ref_audio": str(media_files / "ref.wav")},
-            "transcript": {"source": "json"},
-        })
+        load_job(
+            None,
+            cli_overrides={
+                "input": {"path": str(media_files / "input.mp4")},
+                "output": {"path": "out.mp4"},
+                "voice": {"ref_audio": str(media_files / "ref.wav")},
+                "transcript": {"source": "json"},
+            },
+        )
 
 
 # ── 派生规则 ──
 
+
 def test_audio_only_from_extension(media_files):
-    job = load_job(None, cli_overrides={
-        "input": {"path": str(media_files / "input.mp4")},
-        "output": {"path": "out.wav"},
-        "voice": {"ref_audio": str(media_files / "ref.wav")},
-    })
+    job = load_job(
+        None,
+        cli_overrides={
+            "input": {"path": str(media_files / "input.mp4")},
+            "output": {"path": "out.wav"},
+            "voice": {"ref_audio": str(media_files / "ref.wav")},
+        },
+    )
     assert job.output.audio_only is True
 
 
 def test_audio_only_explicit_mp4(media_files):
-    job = load_job(None, cli_overrides={
-        "input": {"path": str(media_files / "input.mp4")},
-        "output": {"path": "out.mp4", "audio_only": True},
-        "voice": {"ref_audio": str(media_files / "ref.wav")},
-    })
+    job = load_job(
+        None,
+        cli_overrides={
+            "input": {"path": str(media_files / "input.mp4")},
+            "output": {"path": "out.mp4", "audio_only": True},
+            "voice": {"ref_audio": str(media_files / "ref.wav")},
+        },
+    )
     assert job.output.audio_only is True
 
 

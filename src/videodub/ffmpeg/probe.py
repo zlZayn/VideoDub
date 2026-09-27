@@ -11,9 +11,13 @@ from videodub.domain.models import MediaAsset
 def probe_duration(media_path: str) -> float:
     """探测媒体时长（秒），失败返回 0.0"""
     command = [
-        "ffprobe", "-v", "quiet",
-        "-show_entries", "format=duration",
-        "-of", "default=noprint_wrappers=1:nokey=1",
+        "ffprobe",
+        "-v",
+        "quiet",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
         media_path,
     ]
     result = subprocess.run(command, capture_output=True, check=False)
@@ -27,9 +31,14 @@ def probe_duration(media_path: str) -> float:
 def probe_media(media_path: str) -> MediaAsset:
     """探测媒体完整信息，无法解析时抛 ValueError"""
     command = [
-        "ffprobe", "-v", "quiet",
-        "-show_streams", "-show_format",
-        "-of", "json", media_path,
+        "ffprobe",
+        "-v",
+        "quiet",
+        "-show_streams",
+        "-show_format",
+        "-of",
+        "json",
+        media_path,
     ]
     result = subprocess.run(command, capture_output=True, check=False)
     # ffprobe 输出是 UTF-8；Windows 下默认编码是 GBK，必须显式解码
@@ -39,8 +48,12 @@ def probe_media(media_path: str) -> MediaAsset:
         raise ValueError(f"ffprobe 无法解析媒体: {media_path}\n{err[-400:]}")
     info = json.loads(out)
 
-    video_streams = [s for s in info.get("streams", []) if s.get("codec_type") == "video"]
-    audio_streams = [s for s in info.get("streams", []) if s.get("codec_type") == "audio"]
+    video_streams = [
+        s for s in info.get("streams", []) if s.get("codec_type") == "video"
+    ]
+    audio_streams = [
+        s for s in info.get("streams", []) if s.get("codec_type") == "audio"
+    ]
 
     duration = float(info.get("format", {}).get("duration") or 0.0)
     if duration <= 0 and audio_streams:
@@ -55,6 +68,8 @@ def probe_media(media_path: str) -> MediaAsset:
         duration=duration,
         has_video=bool(video_streams),
         has_audio=bool(audio_streams),
-        audio_sample_rate=int(audio["sample_rate"]) if audio and audio.get("sample_rate") else None,
+        audio_sample_rate=int(audio["sample_rate"])
+        if audio and audio.get("sample_rate")
+        else None,
         audio_channels=audio.get("channels"),
     )

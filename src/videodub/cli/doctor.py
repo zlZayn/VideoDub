@@ -32,6 +32,7 @@ def _torch_info() -> str | None:
     """torch 版本 + CUDA 可用性，未安装返回 None"""
     try:
         import torch
+
         cuda = torch.cuda.is_available()
         return f"{torch.__version__} (CUDA: {'可用' if cuda else '不可用'})"
     except ImportError:
@@ -49,7 +50,14 @@ def _run(args) -> int:
     torch_version = _torch_info()
     _check("torch", torch_version is not None, torch_version or "")
 
-    for name in ("funasr", "faster_whisper", "voxcpm", "soundfile", "httpx", "pydantic"):
+    for name in (
+        "funasr",
+        "faster_whisper",
+        "voxcpm",
+        "soundfile",
+        "httpx",
+        "pydantic",
+    ):
         version = _import_version(name)
         _check(name, version is not None, version or "")
 

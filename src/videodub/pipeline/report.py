@@ -29,7 +29,9 @@ class Report:
     def add_warning(self, message: str) -> None:
         self._warnings.append(message)
 
-    def add_segment_rows(self, transcript: Transcript, assignments=(), results=(), aligned=()) -> None:
+    def add_segment_rows(
+        self, transcript: Transcript, assignments=(), results=(), aligned=()
+    ) -> None:
         """汇合逐片段计划/合成/对齐三份数据到一行"""
         voice_by = {a.segment_id: a for a in assignments}
         synth_by = {r.segment_id: r for r in results}

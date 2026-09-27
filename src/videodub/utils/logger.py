@@ -29,9 +29,9 @@ def log(stage: str, message: str) -> None:
 
 def log_stage_header(stage: str, description: str) -> None:
     """输出阶段标题（分隔线 + 阶段名 + 描述）"""
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f"  [{stage}] [{_current_time()}] {description}")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
 
 
 def log_progress(current: int, total: int, message: str = "") -> None:

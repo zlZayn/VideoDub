@@ -57,7 +57,9 @@ class ApiSynthesizer:
             if ref_audio.startswith(("http://", "https://", "data:")):
                 request_payload["ref_audio"] = ref_audio
             else:
-                request_payload["ref_audio"] = _encode_audio_to_base64_data_url(ref_audio)
+                request_payload["ref_audio"] = _encode_audio_to_base64_data_url(
+                    ref_audio
+                )
 
         api_endpoint = f"{self.base_url}/v1/audio/speech"
         try:

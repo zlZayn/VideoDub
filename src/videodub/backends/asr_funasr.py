@@ -16,7 +16,9 @@ from videodub.utils.logger import log, log_stage_header, log_warning
 _PUNCT_CHARS = set("，。！？；：、,.!?;:…—·～ “”‘’\"'（）()《》【】\u3000")
 
 
-def _split_segments_by_silence(segments: list[dict], timestamps, threshold_ms: int) -> list[dict]:
+def _split_segments_by_silence(
+    segments: list[dict], timestamps, threshold_ms: int
+) -> list[dict]:
     """用字级时间戳在句内静音处进一步切分（说话人继承）。
 
     对齐策略：句窗口 [start, end] 内的时间戳数与句文本非标点字符数一致时才切
@@ -93,10 +95,12 @@ class FunAsrTranscriber:
 
         diarization_desc = (
             f" + {self.speaker_embedding_model}说话人分离(最多{self.max_speakers}人)"
-            if self.enable_diarization else ""
+            if self.enable_diarization
+            else ""
         )
         log_stage_header(
-            "ASR", f"FunASR ({self.model_name} + {self.vad_model_name}{diarization_desc}), 设备: {self.device}"
+            "ASR",
+            f"FunASR ({self.model_name} + {self.vad_model_name}{diarization_desc}), 设备: {self.device}",
         )
 
         log("ASR", "加载模型 ...")
@@ -133,18 +137,25 @@ class FunAsrTranscriber:
                 text = seg.get("sentence", seg.get("text", "")).strip()
                 if not text:
                     continue
-                segments.append({
-                    "start": seg.get("start", 0) / 1000.0,
-                    "end": seg.get("end", 0) / 1000.0,
-                    "text": text,
-                    "speaker": seg.get("spk", 0),
-                })
+                segments.append(
+                    {
+                        "start": seg.get("start", 0) / 1000.0,
+                        "end": seg.get("end", 0) / 1000.0,
+                        "text": text,
+                        "speaker": seg.get("spk", 0),
+                    }
+                )
             # 快语速下标点断句会并句：再用字级时间戳在句内明显静音处细切（碎句交给 label 人工合并/修标点）
-            segments = _split_segments_by_silence(segments, result.get("timestamp"), self.split_silence_ms)
+            segments = _split_segments_by_silence(
+                segments, result.get("timestamp"), self.split_silence_ms
+            )
             spk_counts = Counter(seg["speaker"] for seg in segments)
             log("ASR", f"识别到 {len(segments)} 句台词，{len(spk_counts)} 个说话人:")
             for seg in segments:
-                log("ASR", f"  [{seg['start']:6.2f}s - {seg['end']:6.2f}s] 说话人{seg['speaker']}: {seg['text']}")
+                log(
+                    "ASR",
+                    f"  [{seg['start']:6.2f}s - {seg['end']:6.2f}s] 说话人{seg['speaker']}: {seg['text']}",
+                )
             log("ASR", f"说话人统计: {dict(spk_counts)}")
             return Transcript.from_dicts(segments, source="funasr")
 
@@ -155,26 +166,32 @@ class FunAsrTranscriber:
         if not timestamps or len(timestamps) != len(chars):
             full_text = "".join(chars)
             log("ASR", f"识别到 1 句台词: {full_text}")
-            return Transcript.from_dicts([{"start": 0.0, "end": 0.0, "text": full_text}], source="funasr")
+            return Transcript.from_dicts(
+                [{"start": 0.0, "end": 0.0, "text": full_text}], source="funasr"
+            )
 
         segments = []
         current_start_idx = 0
         for i in range(1, len(chars)):
             gap = timestamps[i][0] - timestamps[i - 1][1]
             if gap > self.min_silence_ms:
-                segments.append({
-                    "start": timestamps[current_start_idx][0] / 1000.0,
-                    "end": timestamps[i - 1][1] / 1000.0,
-                    "text": "".join(chars[current_start_idx:i]),
-                })
+                segments.append(
+                    {
+                        "start": timestamps[current_start_idx][0] / 1000.0,
+                        "end": timestamps[i - 1][1] / 1000.0,
+                        "text": "".join(chars[current_start_idx:i]),
+                    }
+                )
                 current_start_idx = i
 
         if current_start_idx < len(chars):
-            segments.append({
-                "start": timestamps[current_start_idx][0] / 1000.0,
-                "end": timestamps[-1][1] / 1000.0,
-                "text": "".join(chars[current_start_idx:]),
-            })
+            segments.append(
+                {
+                    "start": timestamps[current_start_idx][0] / 1000.0,
+                    "end": timestamps[-1][1] / 1000.0,
+                    "text": "".join(chars[current_start_idx:]),
+                }
+            )
 
         log("ASR", f"识别到 {len(segments)} 句台词:")
         for seg in segments:

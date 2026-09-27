@@ -55,22 +55,37 @@ def _load_transcript(job: JobSpec, ws: Workspace, cache: Cache) -> dict:
     if cached is not None:
         with open(cached, "r", encoding="utf-8") as f:
             transcript = json.load(f)
-        return {"transcript": Transcript.from_dicts(transcript, source="asr"), "cached": True}
+        return {
+            "transcript": Transcript.from_dicts(transcript, source="asr"),
+            "cached": True,
+        }
 
     extracted = ws.file("asr", "extracted_audio.wav")
     run_ffmpeg_command(
-        ["-y", "-i", media_path,
-         "-vn", "-acodec", "pcm_s16le",
-         "-ar", "16000", "-ac", "1", str(extracted)],
+        [
+            "-y",
+            "-i",
+            media_path,
+            "-vn",
+            "-acodec",
+            "pcm_s16le",
+            "-ar",
+            "16000",
+            "-ac",
+            "1",
+            str(extracted),
+        ],
         "提取视频音轨 (16kHz mono)",
     )
     from videodub.backends.registry import get_transcriber
+
     transcriber = get_transcriber(spec)
     transcript = transcriber.transcribe(str(extracted))
 
     transcript_file = ws.file("asr", "transcript.json")
     transcript_file.write_text(
-        json.dumps(transcript.to_dicts(), ensure_ascii=False, indent=2), encoding="utf-8",
+        json.dumps(transcript.to_dicts(), ensure_ascii=False, indent=2),
+        encoding="utf-8",
     )
     cache.put("asr", key, transcript_file, ".json")
     return {"transcript": transcript, "cached": False}
@@ -95,7 +110,10 @@ def run_job(job: JobSpec, *, workspace: Workspace | None = None) -> dict:
         # 阶段 0: 解析媒体
         with _stage(report, "resolve_media"):
             media = probe_media(str(job.input.path))
-        log("媒体", f"{media.kind}, 时长 {media.duration:.1f}s, 音频 {media.audio_sample_rate}Hz/{media.audio_channels}ch")
+        log(
+            "媒体",
+            f"{media.kind}, 时长 {media.duration:.1f}s, 音频 {media.audio_sample_rate}Hz/{media.audio_channels}ch",
+        )
 
         # 阶段 1: 获取台词
         with _stage(report, "load_transcript"):
@@ -108,10 +126,17 @@ def run_job(job: JobSpec, *, workspace: Workspace | None = None) -> dict:
         # 阶段 2: 配音计划
         with _stage(report, "build_voice_plan"):
             assignments = build_voice_plan(transcript, job.voice)
-        ws.write_artifact("voice_plan.json", [
-            {"segment_id": a.segment_id, "action": a.action.value, "profile_id": a.profile_id}
-            for a in assignments
-        ])
+        ws.write_artifact(
+            "voice_plan.json",
+            [
+                {
+                    "segment_id": a.segment_id,
+                    "action": a.action.value,
+                    "profile_id": a.profile_id,
+                }
+                for a in assignments
+            ],
+        )
 
         # dry_run：到此为止
         if job.runtime.dry_run:
@@ -119,13 +144,17 @@ def run_job(job: JobSpec, *, workspace: Workspace | None = None) -> dict:
             synthesized = sum(1 for a in assignments if a.action.value == "synthesize")
             kept = sum(1 for a in assignments if a.action.value == "keep_original")
             log("计划", f"合成 {synthesized} 句，保留原声 {kept} 句")
-            summary = _summarize(job, media, transcript, assignments, (), (), ws, cache, report)
+            summary = _summarize(
+                job, media, transcript, assignments, (), (), ws, cache, report
+            )
             return summary
 
         # 阶段 3: TTS 合成
         refs = prepare_refs(job, ws)
         with _stage(report, "synthesize"):
-            results = synthesize_segments(assignments, transcript, job.tts, refs, ws, cache)
+            results = synthesize_segments(
+                assignments, transcript, job.tts, refs, ws, cache
+            )
 
         # 阶段 4: 对齐 + 后处理
         with _stage(report, "align"):
@@ -134,21 +163,33 @@ def run_job(job: JobSpec, *, workspace: Workspace | None = None) -> dict:
         # 阶段 5: 混音计划
         with _stage(report, "build_mix_plan"):
             mix_plan = build_mix_plan(transcript, aligned, job.mix)
-        ws.write_artifact("mix_plan.json", {
-            "mode": mix_plan.mode.value,
-            "clips": [
-                {"segment_id": c.segment_id, "audio_path": str(c.audio_path),
-                 "start": c.start, "end": c.end}
-                for c in mix_plan.clips
-            ],
-            "background_volume_ratio": mix_plan.background_volume_ratio,
-        })
-        log("合成", f"混音模式: {mix_plan.mode.value}, 配音片段 {len(mix_plan.clips)} 个")
+        ws.write_artifact(
+            "mix_plan.json",
+            {
+                "mode": mix_plan.mode.value,
+                "clips": [
+                    {
+                        "segment_id": c.segment_id,
+                        "audio_path": str(c.audio_path),
+                        "start": c.start,
+                        "end": c.end,
+                    }
+                    for c in mix_plan.clips
+                ],
+                "background_volume_ratio": mix_plan.background_volume_ratio,
+            },
+        )
+        log(
+            "合成",
+            f"混音模式: {mix_plan.mode.value}, 配音片段 {len(mix_plan.clips)} 个",
+        )
 
         # 阶段 6: 渲染输出
         with _stage(report, "render"):
             render(
-                mix_plan, str(job.input.path), str(job.output.path),
+                mix_plan,
+                str(job.input.path),
+                str(job.output.path),
                 audio_only=job.output.audio_only,
                 video_codec=job.output.video_codec,
                 audio_codec=job.output.audio_codec,
@@ -156,12 +197,24 @@ def run_job(job: JobSpec, *, workspace: Workspace | None = None) -> dict:
             )
 
         log_stage_header("完成", f"全部完成! 输出文件: {job.output.path}")
-        return _summarize(job, media, transcript, assignments, results, aligned, ws, cache, report)
+        return _summarize(
+            job, media, transcript, assignments, results, aligned, ws, cache, report
+        )
     finally:
         ws.cleanup()
 
 
-def _summarize(job, media, transcript, assignments, results, aligned, ws: Workspace, cache: Cache, report) -> dict:
+def _summarize(
+    job,
+    media,
+    transcript,
+    assignments,
+    results,
+    aligned,
+    ws: Workspace,
+    cache: Cache,
+    report,
+) -> dict:
     """汇总报告并写入 report.json"""
     report.add_segment_rows(transcript, assignments, results, aligned)
 
@@ -174,14 +227,23 @@ def _summarize(job, media, transcript, assignments, results, aligned, ws: Worksp
         media=media_dict,
         output={"path": str(job.output.path), "exists": Path(job.output.path).exists()},
         dry_run=job.runtime.dry_run,
-        transcript={"source": transcript.source, "count": len(transcript.segments),
-                    "speakers": list(transcript.speakers)},
+        transcript={
+            "source": transcript.source,
+            "count": len(transcript.segments),
+            "speakers": list(transcript.speakers),
+        },
         cache={"asr_hits": asr_hits, "tts_hits": tts_hits},
         summary={
             "synthesize": sum(1 for a in assignments if a.action.value == "synthesize"),
-            "keep_original": sum(1 for a in assignments if a.action.value == "keep_original"),
-            "synth_ok": sum(1 for r in results if r.status.value == "ok") if results else 0,
-            "failed": sum(1 for r in results if r.status.value == "failed") if results else 0,
+            "keep_original": sum(
+                1 for a in assignments if a.action.value == "keep_original"
+            ),
+            "synth_ok": sum(1 for r in results if r.status.value == "ok")
+            if results
+            else 0,
+            "failed": sum(1 for r in results if r.status.value == "failed")
+            if results
+            else 0,
         },
     )
     report_path = write_report(ws.root, data)

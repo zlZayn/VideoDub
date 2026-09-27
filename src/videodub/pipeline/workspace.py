@@ -37,7 +37,9 @@ class Workspace:
     def write_artifact(self, name: str, data: dict | list) -> Path:
         """把结构化产物写入根目录 JSON"""
         path = self.root / name
-        path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        path.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
         return path
 
     def cleanup(self) -> None:

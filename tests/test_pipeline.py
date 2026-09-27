@@ -32,6 +32,7 @@ from videodub.pipeline.workspace import Workspace
 
 # ── cache ──
 
+
 def test_cache_put_get_roundtrip(tmp_path):
     cache = Cache(root=tmp_path / "cache", enabled=True)
     source = tmp_path / "src.wav"
@@ -70,12 +71,30 @@ def test_audio_hash_changes_with_content(tmp_path):
 def test_asr_cache_key_param_sensitive(tmp_path):
     media = str(tmp_path / "m.mp4")
     Path(media).write_bytes(b"media")
-    base = asr_cache_key(media, backend="funasr", model="paraformer-zh", language="zh",
-                         diarize=True, max_speakers=2)
-    assert base != asr_cache_key(media, backend="funasr", model="paraformer-zh", language="zh",
-                                 diarize=False, max_speakers=2)
-    assert base != asr_cache_key(media, backend="whisper", model="paraformer-zh", language="zh",
-                                 diarize=True, max_speakers=2)
+    base = asr_cache_key(
+        media,
+        backend="funasr",
+        model="paraformer-zh",
+        language="zh",
+        diarize=True,
+        max_speakers=2,
+    )
+    assert base != asr_cache_key(
+        media,
+        backend="funasr",
+        model="paraformer-zh",
+        language="zh",
+        diarize=False,
+        max_speakers=2,
+    )
+    assert base != asr_cache_key(
+        media,
+        backend="whisper",
+        model="paraformer-zh",
+        language="zh",
+        diarize=True,
+        max_speakers=2,
+    )
 
 
 def test_tts_cache_key_text_and_ref_sensitive(tmp_path):
@@ -83,12 +102,19 @@ def test_tts_cache_key_text_and_ref_sensitive(tmp_path):
     ref_b = tmp_path / "b.wav"
     ref_a.write_bytes(b"a")
     ref_b.write_bytes(b"b")
-    base = tts_cache_key("你好", str(ref_a), mode="local", model="voxcpm2", steps=10, device="cpu")
-    assert base != tts_cache_key("你好", str(ref_b), mode="local", model="voxcpm2", steps=10, device="cpu")
-    assert base != tts_cache_key("再见", str(ref_a), mode="local", model="voxcpm2", steps=10, device="cpu")
+    base = tts_cache_key(
+        "你好", str(ref_a), mode="local", model="voxcpm2", steps=10, device="cpu"
+    )
+    assert base != tts_cache_key(
+        "你好", str(ref_b), mode="local", model="voxcpm2", steps=10, device="cpu"
+    )
+    assert base != tts_cache_key(
+        "再见", str(ref_a), mode="local", model="voxcpm2", steps=10, device="cpu"
+    )
 
 
 # ── workspace ──
+
 
 def test_workspace_file_and_cleanup(tmp_path):
     ws = Workspace(tmp_path / "run", keep=False)
@@ -113,11 +139,14 @@ def test_workspace_keep_preserves_all(tmp_path):
 
 # ── 配音计划 ──
 
+
 def _transcript(*items):
-    return Transcript(segments=tuple(
-        Segment(id=f"seg_{i + 1:04d}", range=TimeRange(s, e), text=t, speaker=spk)
-        for i, (s, e, t, spk) in enumerate(items)
-    ))
+    return Transcript(
+        segments=tuple(
+            Segment(id=f"seg_{i + 1:04d}", range=TimeRange(s, e), text=t, speaker=spk)
+            for i, (s, e, t, spk) in enumerate(items)
+        )
+    )
 
 
 def test_voice_plan_global_ref(tmp_path):
@@ -136,11 +165,16 @@ def test_voice_plan_speaker_map_keep_and_unmapped(tmp_path):
         (2.0, 3.0, "c", "SPEAKER_2"),
         (3.0, 4.0, "d", None),
     )
-    voice = VoiceSpec(speaker_map={
-        "SPEAKER_0": tmp_path / "a.wav", "SPEAKER_1": None,
-    })
+    voice = VoiceSpec(
+        speaker_map={
+            "SPEAKER_0": tmp_path / "a.wav",
+            "SPEAKER_1": None,
+        }
+    )
     plan = build_voice_plan(transcript, voice)
-    assert plan[0].action is VoiceAction.SYNTHESIZE and plan[0].profile_id == "SPEAKER_0"
+    assert (
+        plan[0].action is VoiceAction.SYNTHESIZE and plan[0].profile_id == "SPEAKER_0"
+    )
     assert plan[1].action is VoiceAction.KEEP_ORIGINAL
     assert plan[2].action is VoiceAction.KEEP_ORIGINAL  # 不在映射 → 保留
     assert plan[3].action is VoiceAction.KEEP_ORIGINAL  # 无 speaker → 保留
@@ -148,10 +182,16 @@ def test_voice_plan_speaker_map_keep_and_unmapped(tmp_path):
 
 # ── 混音计划 ──
 
+
 def _aligned(*statuses):
     return tuple(
-        AlignedClip(segment_id=f"seg_{i + 1:04d}", status=st, audio_path=Path(f"a{i}.wav") if st is SynthStatus.OK else None,
-                    target_start=i, target_end=i + 1)
+        AlignedClip(
+            segment_id=f"seg_{i + 1:04d}",
+            status=st,
+            audio_path=Path(f"a{i}.wav") if st is SynthStatus.OK else None,
+            target_start=i,
+            target_end=i + 1,
+        )
         for i, st in enumerate(statuses)
     )
 
@@ -176,7 +216,11 @@ def test_mix_plan_auto_partial_when_kept():
 def test_mix_plan_explicit_keep_background():
     transcript = _transcript((0.0, 1.0, "a", None))
     aligned = _aligned(SynthStatus.OK)
-    plan = build_mix_plan(transcript, aligned, MixSpec(policy=MixPolicy.KEEP_BACKGROUND, background_volume_ratio=0.4))
+    plan = build_mix_plan(
+        transcript,
+        aligned,
+        MixSpec(policy=MixPolicy.KEEP_BACKGROUND, background_volume_ratio=0.4),
+    )
     assert plan.mode is MixMode.KEEP_BACKGROUND
     assert plan.background_volume_ratio == 0.4
 
@@ -191,15 +235,28 @@ def test_mix_plan_explicit_full_wins_over_kept():
 
 # ── 对齐 ──
 
+
 def test_align_results_and_extreme_warning(tmp_path, monkeypatch):
     from videodub.pipeline import synthesis
 
-    monkeypatch.setattr(synthesis, "stretch_audio_to_duration", lambda src, dst, target: Path(dst).write_bytes(b"x"))
-    monkeypatch.setattr(synthesis, "post_process_audio", lambda src, dst, **kw: Path(dst).write_bytes(b"x"))
+    monkeypatch.setattr(
+        synthesis,
+        "stretch_audio_to_duration",
+        lambda src, dst, target: Path(dst).write_bytes(b"x"),
+    )
+    monkeypatch.setattr(
+        synthesis,
+        "post_process_audio",
+        lambda src, dst, **kw: Path(dst).write_bytes(b"x"),
+    )
     monkeypatch.setattr(synthesis, "probe_duration", lambda p: 0.5)
 
     transcript = _transcript((0.0, 2.0, "很长的一句话", None))
-    results = (SynthesisResult("seg_0001", SynthStatus.OK, audio_path=Path("tts.wav"), duration=5.0),)
+    results = (
+        SynthesisResult(
+            "seg_0001", SynthStatus.OK, audio_path=Path("tts.wav"), duration=5.0
+        ),
+    )
     ws = Workspace(tmp_path / "run")
 
     aligned = align_segments(results, transcript, AlignSpec(), ws)
@@ -221,6 +278,7 @@ def test_align_passes_through_non_ok(tmp_path):
 
 # ── 全链集成（假后端跑完整流程） ──
 
+
 class _FakeSynth:
     def __init__(self, **kwargs):
         self.calls = 0
@@ -240,17 +298,28 @@ class _FakeSynth:
 def _make_job(tmp_path, *, cache=False):
     (tmp_path / "input.mp4").write_bytes(b"media")
     (tmp_path / "ref.wav").write_bytes(b"ref")
-    (tmp_path / "segments.json").write_text(json.dumps([
-        {"start": 0.0, "end": 1.0, "text": "第一句"},
-        {"start": 2.0, "end": 3.0, "text": "第二句", "speaker": 0},
-    ], ensure_ascii=False), encoding="utf-8")
-    return JobSpec.model_validate({
-        "input": {"path": str(tmp_path / "input.mp4")},
-        "output": {"path": str(tmp_path / "out.mp4")},
-        "transcript": {"source": TranscriptSource.JSON.value, "path": str(tmp_path / "segments.json")},
-        "voice": {"ref_audio": str(tmp_path / "ref.wav")},
-        "runtime": {"cache": cache},
-    })
+    (tmp_path / "segments.json").write_text(
+        json.dumps(
+            [
+                {"start": 0.0, "end": 1.0, "text": "第一句"},
+                {"start": 2.0, "end": 3.0, "text": "第二句", "speaker": 0},
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    return JobSpec.model_validate(
+        {
+            "input": {"path": str(tmp_path / "input.mp4")},
+            "output": {"path": str(tmp_path / "out.mp4")},
+            "transcript": {
+                "source": TranscriptSource.JSON.value,
+                "path": str(tmp_path / "segments.json"),
+            },
+            "voice": {"ref_audio": str(tmp_path / "ref.wav")},
+            "runtime": {"cache": cache},
+        }
+    )
 
 
 def test_run_job_full_fake_pipeline(tmp_path, monkeypatch):
@@ -258,27 +327,53 @@ def test_run_job_full_fake_pipeline(tmp_path, monkeypatch):
     from videodub.pipeline import runner
     from videodub.pipeline.cache import Cache as RealCache
 
-    monkeypatch.setattr(runner, "probe_media", lambda p: MediaAsset(
-        path=Path(p), kind="video", duration=5.0, has_video=True, has_audio=True,
-        audio_sample_rate=48000, audio_channels=2,
-    ))
-    monkeypatch.setattr(runner, "render", lambda *a, **kw: Path(a[2]).write_bytes(b"final"))
+    monkeypatch.setattr(
+        runner,
+        "probe_media",
+        lambda p: MediaAsset(
+            path=Path(p),
+            kind="video",
+            duration=5.0,
+            has_video=True,
+            has_audio=True,
+            audio_sample_rate=48000,
+            audio_channels=2,
+        ),
+    )
+    monkeypatch.setattr(
+        runner, "render", lambda *a, **kw: Path(a[2]).write_bytes(b"final")
+    )
     monkeypatch.setattr(runner, "ensure_ffmpeg_available", lambda: None)
-    monkeypatch.setattr(runner, "Cache", lambda enabled: RealCache(root=tmp_path / ".cache", enabled=enabled))
-    monkeypatch.setattr("videodub.pipeline.synthesis.get_synthesizer", lambda spec: _FakeSynth())
+    monkeypatch.setattr(
+        runner,
+        "Cache",
+        lambda enabled: RealCache(root=tmp_path / ".cache", enabled=enabled),
+    )
+    monkeypatch.setattr(
+        "videodub.pipeline.synthesis.get_synthesizer", lambda spec: _FakeSynth()
+    )
     monkeypatch.setattr("videodub.pipeline.synthesis.probe_duration", lambda p: 0.5)
-    monkeypatch.setattr("videodub.pipeline.synthesis.stretch_audio_to_duration",
-                        lambda src, dst, target: Path(dst).write_bytes(b"x"))
-    monkeypatch.setattr("videodub.pipeline.synthesis.post_process_audio",
-                        lambda src, dst, **kw: Path(dst).write_bytes(b"x"))
+    monkeypatch.setattr(
+        "videodub.pipeline.synthesis.stretch_audio_to_duration",
+        lambda src, dst, target: Path(dst).write_bytes(b"x"),
+    )
+    monkeypatch.setattr(
+        "videodub.pipeline.synthesis.post_process_audio",
+        lambda src, dst, **kw: Path(dst).write_bytes(b"x"),
+    )
 
     job = _make_job(tmp_path, cache=True)
     report = runner.run_job(job)
 
     # 报告内容
     assert [s["name"] for s in report["stages"]] == [
-        "resolve_media", "load_transcript", "build_voice_plan", "synthesize",
-        "align", "build_mix_plan", "render",
+        "resolve_media",
+        "load_transcript",
+        "build_voice_plan",
+        "synthesize",
+        "align",
+        "build_mix_plan",
+        "render",
     ]
     assert len(report["segments"]) == 2
     row = report["segments"][0]
@@ -291,7 +386,13 @@ def test_run_job_full_fake_pipeline(tmp_path, monkeypatch):
 
     # 工件文件
     run_dir = next((tmp_path / "out.mp4").parent.glob(".videodub/run-*"))
-    for name in ("report.json", "transcript.json", "voice_plan.json", "config.snapshot.json", "mix_plan.json"):
+    for name in (
+        "report.json",
+        "transcript.json",
+        "voice_plan.json",
+        "config.snapshot.json",
+        "mix_plan.json",
+    ):
         assert (run_dir / name).exists(), name
     assert not (run_dir / "tts").exists()  # 重产物默认清理
 
@@ -305,10 +406,19 @@ def test_run_job_dry_run_skips_heavy_steps(tmp_path, monkeypatch):
     from videodub.ffmpeg.probe import MediaAsset
     from videodub.pipeline import runner
 
-    monkeypatch.setattr(runner, "probe_media", lambda p: MediaAsset(
-        path=Path(p), kind="video", duration=5.0, has_video=True, has_audio=True,
-        audio_sample_rate=48000, audio_channels=2,
-    ))
+    monkeypatch.setattr(
+        runner,
+        "probe_media",
+        lambda p: MediaAsset(
+            path=Path(p),
+            kind="video",
+            duration=5.0,
+            has_video=True,
+            has_audio=True,
+            audio_sample_rate=48000,
+            audio_channels=2,
+        ),
+    )
     monkeypatch.setattr(runner, "ensure_ffmpeg_available", lambda: None)
 
     job = _make_job(tmp_path)
@@ -316,6 +426,10 @@ def test_run_job_dry_run_skips_heavy_steps(tmp_path, monkeypatch):
     report = runner.run_job(job)
 
     assert report["dry_run"] is True
-    assert [s["name"] for s in report["stages"]] == ["resolve_media", "load_transcript", "build_voice_plan"]
+    assert [s["name"] for s in report["stages"]] == [
+        "resolve_media",
+        "load_transcript",
+        "build_voice_plan",
+    ]
     assert report["segments"][0]["plan_action"] == "synthesize"
     assert "synth_status" not in report["segments"][0]

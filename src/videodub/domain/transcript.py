@@ -64,11 +64,22 @@ class Segment:
             text=str(data["text"]),
             speaker=normalize_speaker(data.get("speaker")),
             language=data.get("language"),
-            confidence=float(data["confidence"]) if data.get("confidence") is not None else None,
+            confidence=float(data["confidence"])
+            if data.get("confidence") is not None
+            else None,
             meta={
                 key: value
                 for key, value in data.items()
-                if key not in ("id", "start", "end", "text", "speaker", "language", "confidence")
+                if key
+                not in (
+                    "id",
+                    "start",
+                    "end",
+                    "text",
+                    "speaker",
+                    "language",
+                    "confidence",
+                )
             },
         )
 
@@ -92,9 +103,13 @@ class Transcript:
         return tuple(seen)
 
     @classmethod
-    def from_dicts(cls, items: list[dict], *, language: str | None = None, source: str = "asr") -> Transcript:
+    def from_dicts(
+        cls, items: list[dict], *, language: str | None = None, source: str = "asr"
+    ) -> Transcript:
         return cls(
-            segments=tuple(Segment.from_dict(item, index) for index, item in enumerate(items)),
+            segments=tuple(
+                Segment.from_dict(item, index) for index, item in enumerate(items)
+            ),
             language=language,
             source=source,
         )

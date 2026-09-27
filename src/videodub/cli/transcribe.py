@@ -20,15 +20,30 @@ from videodub.utils.logger import log_success
 
 def build_parser(parser) -> None:
     parser.add_argument("input", help="输入视频/音频路径")
-    parser.add_argument("-o", "--output", default=None,
-                        help="台词 JSON 输出路径（默认 output/<输入名>/01_transcript.json）")
-    parser.add_argument("--backend", default=None, choices=["funasr", "whisper"], help="ASR 后端（默认 funasr）")
+    parser.add_argument(
+        "-o",
+        "--output",
+        default=None,
+        help="台词 JSON 输出路径（默认 output/<输入名>/01_transcript.json）",
+    )
+    parser.add_argument(
+        "--backend",
+        default=None,
+        choices=["funasr", "whisper"],
+        help="ASR 后端（默认 funasr）",
+    )
     parser.add_argument("--model", default=None, help="ASR 模型名")
-    parser.add_argument("--device", default=None, choices=["cpu", "cuda"], help="推理设备（默认 cpu）")
-    parser.add_argument("--compute-type", default=None, help="whisper 计算精度（默认 float16）")
+    parser.add_argument(
+        "--device", default=None, choices=["cpu", "cuda"], help="推理设备（默认 cpu）"
+    )
+    parser.add_argument(
+        "--compute-type", default=None, help="whisper 计算精度（默认 float16）"
+    )
     parser.add_argument("--language", default=None, help="源语言代码（whisper 用）")
     parser.add_argument("--diarize", action="store_true", help="启用说话人分离")
-    parser.add_argument("--max-speakers", type=int, default=None, help="最大说话人数（默认 2）")
+    parser.add_argument(
+        "--max-speakers", type=int, default=None, help="最大说话人数（默认 2）"
+    )
     parser.add_argument("--no-cache", action="store_true", help="禁用 ASR 结果缓存")
     parser.add_argument("--keep-temp", action="store_true", help="保留运行目录")
 
@@ -74,16 +89,28 @@ def _run(args) -> int:
 
     extracted = ws.file("asr", "extracted_audio.wav")
     run_ffmpeg_command(
-        ["-y", "-i", args.input,
-         "-vn", "-acodec", "pcm_s16le",
-         "-ar", "16000", "-ac", "1", str(extracted)],
+        [
+            "-y",
+            "-i",
+            args.input,
+            "-vn",
+            "-acodec",
+            "pcm_s16le",
+            "-ar",
+            "16000",
+            "-ac",
+            "1",
+            str(extracted),
+        ],
         "提取音轨 (16kHz mono)",
     )
     transcript = get_transcriber(spec).transcribe(str(extracted))
 
     items = transcript.to_dicts()
     transcript_file = ws.file("asr", "transcript.json")
-    transcript_file.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
+    transcript_file.write_text(
+        json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     cache.put("asr", key, transcript_file, ".json")
     _write(output_path, items)
     log_success(f"台词 JSON: {output_path}")
@@ -92,5 +119,6 @@ def _run(args) -> int:
 
 def _write(output_path, items) -> None:
     Path(output_path).write_text(
-        json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8",
+        json.dumps(items, ensure_ascii=False, indent=2),
+        encoding="utf-8",
     )

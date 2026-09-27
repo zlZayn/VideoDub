@@ -31,23 +31,35 @@ def build_render_command(
     """
     extra_inputs, filter_expressions, final_label = build_mix_invocation(plan, duration)
     command = [
-        "-y", "-i", media_path,
+        "-y",
+        "-i",
+        media_path,
         *extra_inputs,
-        "-filter_complex", ";".join(filter_expressions),
+        "-filter_complex",
+        ";".join(filter_expressions),
     ]
     if audio_only:
         command += [
-            "-map", final_label,
-            "-c:a", "pcm_s16le",
-            "-ar", str(plan.output_sample_rate),
+            "-map",
+            final_label,
+            "-c:a",
+            "pcm_s16le",
+            "-ar",
+            str(plan.output_sample_rate),
             output_path,
         ]
     else:
         command += [
-            "-map", "0:v", "-map", final_label,
-            "-c:v", video_codec,
-            "-c:a", audio_codec,
-            "-b:a", audio_bitrate,
+            "-map",
+            "0:v",
+            "-map",
+            final_label,
+            "-c:v",
+            video_codec,
+            "-c:a",
+            audio_codec,
+            "-b:a",
+            audio_bitrate,
             "-shortest",
             output_path,
         ]
@@ -69,7 +81,10 @@ def render(
     if duration <= 0:
         raise ValueError(f"无法探测媒体时长: {media_path}")
     command = build_render_command(
-        plan, media_path, output_path, duration,
+        plan,
+        media_path,
+        output_path,
+        duration,
         audio_only=audio_only,
         video_codec=video_codec,
         audio_codec=audio_codec,

@@ -13,6 +13,7 @@ from videodub.ffmpeg.render_mix import build_render_command
 
 # ── 纯工具 ──
 
+
 def test_build_mute_expression_single_range():
     assert build_mute_expression((TimeRange(1.234, 3.010),)) == "between(t,1.234,3.010)"
 
@@ -40,6 +41,7 @@ def test_build_atempo_chain_cascade_fast():
 
 # ── mix invocation ──
 
+
 def _plan(mode, clips=(), bg_ratio=None):
     return MixPlan(mode=mode, clips=clips, background_volume_ratio=bg_ratio)
 
@@ -54,9 +56,16 @@ def test_full_replace_invocation_golden():
     )
     inputs, filters, label = build_mix_invocation(plan, duration=10.0)
     assert inputs == [
-        "-f", "lavfi", "-t", "10.000", "-i", "anullsrc=48000:cl=mono",
-        "-i", "a.wav",
-        "-i", "b.wav",
+        "-f",
+        "lavfi",
+        "-t",
+        "10.000",
+        "-i",
+        "anullsrc=48000:cl=mono",
+        "-i",
+        "a.wav",
+        "-i",
+        "b.wav",
     ]
     assert filters == [
         "[1:a]acopy[base]",
@@ -68,13 +77,20 @@ def test_full_replace_invocation_golden():
 
 
 def test_keep_background_invocation_golden():
-    plan = _plan(MixMode.KEEP_BACKGROUND, clips=(PlacedClip("s1", Path("a.wav"), 1.0, 2.0),), bg_ratio=0.2)
+    plan = _plan(
+        MixMode.KEEP_BACKGROUND,
+        clips=(PlacedClip("s1", Path("a.wav"), 1.0, 2.0),),
+        bg_ratio=0.2,
+    )
     _, filters, _ = build_mix_invocation(plan, duration=10.0)
     assert filters[0] == (
         "[0:a]aformat=sample_rates=48000:channel_layouts=mono,volume=0.2[base]"
     )
     assert filters[1] == "[1:a]adelay=1000|1000,acopy[d0]"
-    assert filters[-1] == "[base][d0]amix=inputs=2:duration=longest:dropout_transition=0[aout]"
+    assert (
+        filters[-1]
+        == "[base][d0]amix=inputs=2:duration=longest:dropout_transition=0[aout]"
+    )
 
 
 def test_partial_replace_invocation_golden():
@@ -102,38 +118,80 @@ def test_single_input_passthrough():
 
 # ── render command ──
 
+
 def test_render_video_command_golden():
-    plan = _plan(MixMode.FULL_REPLACE, clips=(PlacedClip("s1", Path("a.wav"), 1.0, 2.0),))
+    plan = _plan(
+        MixMode.FULL_REPLACE, clips=(PlacedClip("s1", Path("a.wav"), 1.0, 2.0),)
+    )
     cmd = build_render_command(
-        plan, "input.mp4", "out.mp4", duration=10.0,
-        audio_only=False, video_codec="copy", audio_codec="aac", audio_bitrate="192k",
+        plan,
+        "input.mp4",
+        "out.mp4",
+        duration=10.0,
+        audio_only=False,
+        video_codec="copy",
+        audio_codec="aac",
+        audio_bitrate="192k",
     )
     assert cmd == [
-        "-y", "-i", "input.mp4",
-        "-f", "lavfi", "-t", "10.000", "-i", "anullsrc=48000:cl=mono",
-        "-i", "a.wav",
+        "-y",
+        "-i",
+        "input.mp4",
+        "-f",
+        "lavfi",
+        "-t",
+        "10.000",
+        "-i",
+        "anullsrc=48000:cl=mono",
+        "-i",
+        "a.wav",
         "-filter_complex",
         "[1:a]acopy[base];[2:a]adelay=1000|1000,acopy[d0];[base][d0]amix=inputs=2:duration=longest:dropout_transition=0[aout]",
-        "-map", "0:v", "-map", "[aout]",
-        "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+        "-map",
+        "0:v",
+        "-map",
+        "[aout]",
+        "-c:v",
+        "copy",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "192k",
         "-shortest",
         "out.mp4",
     ]
 
 
 def test_render_audio_only_command_golden():
-    plan = _plan(MixMode.KEEP_BACKGROUND, clips=(PlacedClip("s1", Path("a.wav"), 1.0, 2.0),), bg_ratio=0.3)
+    plan = _plan(
+        MixMode.KEEP_BACKGROUND,
+        clips=(PlacedClip("s1", Path("a.wav"), 1.0, 2.0),),
+        bg_ratio=0.3,
+    )
     cmd = build_render_command(
-        plan, "input.mp4", "out.wav", duration=10.0, audio_only=True,
+        plan,
+        "input.mp4",
+        "out.wav",
+        duration=10.0,
+        audio_only=True,
     )
     assert cmd == [
-        "-y", "-i", "input.mp4",
-        "-i", "a.wav",
+        "-y",
+        "-i",
+        "input.mp4",
+        "-i",
+        "a.wav",
         "-filter_complex",
-        ("[0:a]aformat=sample_rates=48000:channel_layouts=mono,volume=0.3[base];"
-        "[1:a]adelay=1000|1000,acopy[d0];"
-        "[base][d0]amix=inputs=2:duration=longest:dropout_transition=0[aout]"),
-        "-map", "[aout]",
-        "-c:a", "pcm_s16le", "-ar", "48000",
+        (
+            "[0:a]aformat=sample_rates=48000:channel_layouts=mono,volume=0.3[base];"
+            "[1:a]adelay=1000|1000,acopy[d0];"
+            "[base][d0]amix=inputs=2:duration=longest:dropout_transition=0[aout]"
+        ),
+        "-map",
+        "[aout]",
+        "-c:a",
+        "pcm_s16le",
+        "-ar",
+        "48000",
         "out.wav",
     ]

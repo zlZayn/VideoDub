@@ -48,7 +48,10 @@ class VoxCpmSynthesizer:
             log_warning("VoxCPM2 模型未加载，请先调用 load()")
             return False
         try:
-            generate_kwargs = {"text": text, "inference_timesteps": self.inference_steps}
+            generate_kwargs = {
+                "text": text,
+                "inference_timesteps": self.inference_steps,
+            }
             if ref_audio:
                 generate_kwargs["reference_wav_path"] = ref_audio
             waveform = self._model.generate(**generate_kwargs)

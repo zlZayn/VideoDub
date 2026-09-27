@@ -33,7 +33,9 @@ class _SineSynthesizer:
         pass
 
     def synthesize(self, text, ref_audio, output_path):
-        wave = 0.3 * np.sin(2 * np.pi * 440 * np.arange(48000) / 48000).astype(np.float32)
+        wave = 0.3 * np.sin(2 * np.pi * 440 * np.arange(48000) / 48000).astype(
+            np.float32
+        )
         sf.write(output_path, wave, 48000)
         return True
 
@@ -43,12 +45,28 @@ def media(tmp_path):
     """3 秒合成视频（testsrc2 画面 + 300Hz 正弦音）"""
     video = tmp_path / "input.mp4"
     subprocess_cmd = [
-        "ffmpeg", "-y", "-f", "lavfi", "-i", "testsrc2=size=320x240:rate=25",
-        "-f", "lavfi", "-i", "sine=frequency=300:sample_rate=48000",
-        "-t", "3", "-c:v", "libx264", "-preset", "ultrafast",
-        "-c:a", "aac", str(video),
+        "ffmpeg",
+        "-y",
+        "-f",
+        "lavfi",
+        "-i",
+        "testsrc2=size=320x240:rate=25",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=300:sample_rate=48000",
+        "-t",
+        "3",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "ultrafast",
+        "-c:a",
+        "aac",
+        str(video),
     ]
     import subprocess
+
     result = subprocess.run(subprocess_cmd, capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stderr[-500:]
     (tmp_path / "ref.wav").write_bytes(b"ref")
@@ -81,7 +99,9 @@ def test_e2e_full_replace_real_ffmpeg(tmp_path, media, monkeypatch):
 
     monkeypatch.setattr(synthesis, "get_synthesizer", lambda spec: _SineSynthesizer())
 
-    report = run_job(_job(tmp_path, SEGMENTS, voice={"ref_audio": str(tmp_path / "ref.wav")}))
+    report = run_job(
+        _job(tmp_path, SEGMENTS, voice={"ref_audio": str(tmp_path / "ref.wav")})
+    )
 
     output = tmp_path / "out.mp4"
     assert output.exists()
@@ -102,17 +122,22 @@ def test_e2e_partial_replace_keeps_original(tmp_path, media, monkeypatch):
         {"start": 0.5, "end": 1.2, "text": "第一句", "speaker": 0},
         {"start": 1.5, "end": 2.6, "text": "第二句", "speaker": 1},
     ]
-    report = run_job(_job(
-        tmp_path, segments,
-        voice={"speaker_map": {"SPEAKER_0": str(tmp_path / "ref.wav")}},
-    ))
+    report = run_job(
+        _job(
+            tmp_path,
+            segments,
+            voice={"speaker_map": {"SPEAKER_0": str(tmp_path / "ref.wav")}},
+        )
+    )
 
     output = tmp_path / "out.mp4"
     assert output.exists()
     assert report["summary"]["keep_original"] == 1
     assert report["summary"]["synth_ok"] == 1
     run_dir = tmp_path / ".videodub"
-    mix_plan = json.loads(next(run_dir.glob("run-*/mix_plan.json")).read_text(encoding="utf-8"))
+    mix_plan = json.loads(
+        next(run_dir.glob("run-*/mix_plan.json")).read_text(encoding="utf-8")
+    )
     assert mix_plan["mode"] == "partial_replace"
     assert len(mix_plan["clips"]) == 1
 
@@ -122,16 +147,21 @@ def test_e2e_keep_background_real_ffmpeg(tmp_path, media, monkeypatch):
     from videodub.pipeline.runner import run_job
 
     monkeypatch.setattr(synthesis, "get_synthesizer", lambda spec: _SineSynthesizer())
-    run_job(_job(
-        tmp_path, SEGMENTS,
-        voice={"ref_audio": str(tmp_path / "ref.wav")},
-        output_name="bg.mp4",
-        mix={"policy": "keep_background", "background_volume_ratio": 0.5},
-    ))
+    run_job(
+        _job(
+            tmp_path,
+            SEGMENTS,
+            voice={"ref_audio": str(tmp_path / "ref.wav")},
+            output_name="bg.mp4",
+            mix={"policy": "keep_background", "background_volume_ratio": 0.5},
+        )
+    )
 
     output = tmp_path / "bg.mp4"
     assert output.exists()
     assert abs(probe_duration(str(output)) - 3.0) < 0.5
     run_dir = tmp_path / ".videodub"
-    mix_plan = json.loads(next(run_dir.glob("run-*/mix_plan.json")).read_text(encoding="utf-8"))
+    mix_plan = json.loads(
+        next(run_dir.glob("run-*/mix_plan.json")).read_text(encoding="utf-8")
+    )
     assert mix_plan["mode"] == "keep_background"

@@ -31,17 +31,31 @@ def text_hash(*parts: str) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:32]
 
 
-def asr_cache_key(media_path: str, *, backend: str, model: str, language: str | None,
-                  diarize: bool, max_speakers: int) -> str:
+def asr_cache_key(
+    media_path: str,
+    *,
+    backend: str,
+    model: str,
+    language: str | None,
+    diarize: bool,
+    max_speakers: int,
+) -> str:
     """ASR 缓存键：输入媒体 hash + 识别参数"""
     _ASR_CACHE_VERSION = "v3"  # 升版以失效旧缓存（v3：diarize 增加句内静音细切）
     return text_hash(
-        _ASR_CACHE_VERSION, audio_hash(media_path), backend, model, language or "", str(diarize), str(max_speakers),
+        _ASR_CACHE_VERSION,
+        audio_hash(media_path),
+        backend,
+        model,
+        language or "",
+        str(diarize),
+        str(max_speakers),
     )
 
 
-def tts_cache_key(text: str, ref_audio: str | None, *, mode: str, model: str,
-                  steps: int, device: str) -> str:
+def tts_cache_key(
+    text: str, ref_audio: str | None, *, mode: str, model: str, steps: int, device: str
+) -> str:
     """TTS 缓存键：文本 + 参考音频 hash + 模型参数"""
     ref_hash = audio_hash(ref_audio) if ref_audio else ""
     return text_hash(text, ref_hash, mode, model, str(steps), device)
@@ -50,7 +64,9 @@ def tts_cache_key(text: str, ref_audio: str | None, *, mode: str, model: str,
 class Cache:
     """轻量文件缓存"""
 
-    def __init__(self, root: Path = Path(".cache/videodub"), enabled: bool = True) -> None:
+    def __init__(
+        self, root: Path = Path(".cache/videodub"), enabled: bool = True
+    ) -> None:
         self.root = root
         self.enabled = enabled
         self.hits: list[tuple[str, str]] = []  # (group, key)
