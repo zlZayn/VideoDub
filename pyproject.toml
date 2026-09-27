@@ -26,6 +26,7 @@ addopts = "--basetemp=.pytest-tmp"
 
 [dependency-groups]
 dev = [
+    "pytest>=8.0",
     "ruff>=0.16.9",
 ]
 
