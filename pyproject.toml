@@ -23,3 +23,12 @@ pythonpath = ["src"]
 # pytest 9 移除了 ini 的 basetemp 键，用 addopts 落地同一意图：
 # tmp 目录指到工作区 .pytest-tmp/（%TEMP%\pytest-of-* 有 ACL 遗留问题，勿改回）
 addopts = "--basetemp=.pytest-tmp"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.16.9",
+]
+
+[tool.ruff]
+# 不碰 Markdown 里嵌的 Python 片段：文档与笔记正文不属格式化范围
+extend-exclude = ["*.md"]

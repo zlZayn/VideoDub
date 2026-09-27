@@ -69,7 +69,7 @@ class WhisperTranscriber:
             language=self.source_language_code,
             beam_size=self.beam_size,
             vad_filter=True,
-            vad_parameters=dict(min_silence_duration_ms=500, speech_pad_ms=200),
+            vad_parameters={"min_silence_duration_ms": 500, "speech_pad_ms": 200},
         )
 
         recognized_segments = []

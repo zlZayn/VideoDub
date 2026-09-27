@@ -41,8 +41,6 @@ def build_voice_plan(transcript: Transcript, voice: VoiceSpec) -> tuple[VoiceAss
 
 def build_mix_plan(transcript: Transcript, aligned_clips: tuple[AlignedClip, ...], mix: MixSpec) -> MixPlan:
     """按混音策略与对齐结果构建 MixPlan（渲染层唯一输入）"""
-    segments_by_id = {segment.id: segment for segment in transcript.segments}
-
     ok_clips = [clip for clip in aligned_clips if clip.status is SynthStatus.OK and clip.audio_path]
     placed = tuple(
         PlacedClip(

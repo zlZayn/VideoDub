@@ -40,7 +40,7 @@ def run_ffmpeg_command(command_arguments: list[str], step_label: str = "") -> No
         log("FFmpeg", step_label)
     if echo_commands:
         log("FFmpeg", "命令: " + " ".join(["ffmpeg", *command_arguments]))
-    result = subprocess.run(["ffmpeg", *command_arguments], capture_output=True, text=True)
+    result = subprocess.run(["ffmpeg", *command_arguments], capture_output=True, text=True, check=False)
     if result.returncode != 0:
         log_error(f"FFmpeg 执行失败: {' '.join(command_arguments[:4])}...")
         print(result.stderr[-800:])

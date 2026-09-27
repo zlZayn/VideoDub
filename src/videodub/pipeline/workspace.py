@@ -53,6 +53,6 @@ def create_workspace(output_path: str, keep_temp: bool) -> Workspace:
     """按输出文件位置创建运行目录：<输出同目录>/.videodub/run-<时间戳>"""
     output = Path(output_path)
     base = output.parent / ".videodub"
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    timestamp = datetime.now().astimezone().strftime("%Y%m%d-%H%M%S")
     root = base / f"run-{timestamp}"
     return Workspace(root, keep=keep_temp)

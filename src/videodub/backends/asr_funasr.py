@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import itertools
 from collections import Counter
 
 from videodub.domain.transcript import Transcript
@@ -47,7 +48,7 @@ def _split_segments_by_silence(segments: list[dict], timestamps, threshold_ms: i
                 cuts.append(char_ts[k][0])
         cuts.append(len(text))
         pieces = []
-        for b0, b1 in zip(cuts, cuts[1:]):
+        for b0, b1 in itertools.pairwise(cuts):
             piece_text = text[b0:b1].strip()
             if not piece_text:
                 continue
@@ -99,13 +100,13 @@ class FunAsrTranscriber:
         )
 
         log("ASR", "加载模型 ...")
-        model_kwargs = dict(
-            model=self.model_name,
-            model_revision="v2.0.4",
-            vad_model=self.vad_model_name,
-            vad_model_revision="v2.0.4",
-            device=self.device,
-        )
+        model_kwargs = {
+            "model": self.model_name,
+            "model_revision": "v2.0.4",
+            "vad_model": self.vad_model_name,
+            "vad_model_revision": "v2.0.4",
+            "device": self.device,
+        }
         if self.enable_diarization:
             model_kwargs["punc_model"] = "ct-punc"
             model_kwargs["spk_model"] = self.speaker_embedding_model

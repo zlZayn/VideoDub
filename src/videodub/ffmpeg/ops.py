@@ -62,7 +62,7 @@ def measure_average_volume(audio_file_path: str) -> float:
     result = subprocess.run(
         ["ffmpeg", "-i", audio_file_path, "-af", "volumedetect",
          "-vn", "-sn", "-dn", "-f", "null", "NUL"],
-        capture_output=True, text=True
+        capture_output=True, text=True, check=False
     )
     output = result.stderr + result.stdout
     for line in output.split("\n"):

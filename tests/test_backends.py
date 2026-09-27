@@ -19,7 +19,7 @@ from videodub.backends.base import Synthesizer, Transcriber
 from videodub.backends.registry import get_synthesizer, get_transcriber
 from videodub.backends.tts_api import ApiSynthesizer
 from videodub.backends.tts_voxcpm import VoxCpmSynthesizer
-from videodub.config.job_spec import ASRBackend, TranscriptSpec, TTSSpec, TTSMode
+from videodub.config.job_spec import ASRBackend, TranscriptSpec, TTSMode, TTSSpec
 
 
 def _inject_module(monkeypatch, name: str, **attrs) -> types.ModuleType:
@@ -338,7 +338,7 @@ def test_registry_synthesizer_api():
 
 
 def test_registry_unknown_raises(monkeypatch):
-    import videodub.backends.registry as registry
+    from videodub.backends import registry
     monkeypatch.delitem(registry.TRANSCRIBER_REGISTRY, "funasr")
     with pytest.raises(ValueError, match="不支持的 ASR 后端"):
         get_transcriber(TranscriptSpec(backend=ASRBackend.FUNASR))

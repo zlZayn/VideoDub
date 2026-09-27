@@ -6,7 +6,6 @@
 
 import json
 import shutil
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -50,7 +49,7 @@ def media(tmp_path):
         "-c:a", "aac", str(video),
     ]
     import subprocess
-    result = subprocess.run(subprocess_cmd, capture_output=True, text=True)
+    result = subprocess.run(subprocess_cmd, capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stderr[-500:]
     (tmp_path / "ref.wav").write_bytes(b"ref")
 
@@ -77,7 +76,7 @@ SEGMENTS = [
 
 
 def test_e2e_full_replace_real_ffmpeg(tmp_path, media, monkeypatch):
-    import videodub.pipeline.synthesis as synthesis
+    from videodub.pipeline import synthesis
     from videodub.pipeline.runner import run_job
 
     monkeypatch.setattr(synthesis, "get_synthesizer", lambda spec: _SineSynthesizer())
@@ -95,7 +94,7 @@ def test_e2e_full_replace_real_ffmpeg(tmp_path, media, monkeypatch):
 
 def test_e2e_partial_replace_keeps_original(tmp_path, media, monkeypatch):
     """说话人 0 换、说话人 1 保留 → partial_replace 模式，原音轨静音段被替换"""
-    import videodub.pipeline.synthesis as synthesis
+    from videodub.pipeline import synthesis
     from videodub.pipeline.runner import run_job
 
     monkeypatch.setattr(synthesis, "get_synthesizer", lambda spec: _SineSynthesizer())
@@ -119,11 +118,11 @@ def test_e2e_partial_replace_keeps_original(tmp_path, media, monkeypatch):
 
 
 def test_e2e_keep_background_real_ffmpeg(tmp_path, media, monkeypatch):
-    import videodub.pipeline.synthesis as synthesis
+    from videodub.pipeline import synthesis
     from videodub.pipeline.runner import run_job
 
     monkeypatch.setattr(synthesis, "get_synthesizer", lambda spec: _SineSynthesizer())
-    report = run_job(_job(
+    run_job(_job(
         tmp_path, SEGMENTS,
         voice={"ref_audio": str(tmp_path / "ref.wav")},
         output_name="bg.mp4",

@@ -56,7 +56,7 @@ class Segment:
         return result
 
     @classmethod
-    def from_dict(cls, data: dict, index: int) -> "Segment":
+    def from_dict(cls, data: dict, index: int) -> Segment:
         """从旧格式 dict 构建（兼容 ASR 输出 / 字幕 / recognized_segments.json）"""
         return cls(
             id=data.get("id") or f"seg_{index + 1:04d}",
@@ -92,7 +92,7 @@ class Transcript:
         return tuple(seen)
 
     @classmethod
-    def from_dicts(cls, items: list[dict], *, language: str | None = None, source: str = "asr") -> "Transcript":
+    def from_dicts(cls, items: list[dict], *, language: str | None = None, source: str = "asr") -> Transcript:
         return cls(
             segments=tuple(Segment.from_dict(item, index) for index, item in enumerate(items)),
             language=language,

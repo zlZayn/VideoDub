@@ -8,7 +8,6 @@ import pytest
 from videodub.cli.main import main
 from videodub.config.job_spec import MixPolicy
 
-
 # ── run ──
 
 def _media(tmp_path):
@@ -606,8 +605,8 @@ def test_label_undo_structural_edit(tmp_path, monkeypatch):
 # ── inspect / doctor ──
 
 def test_inspect_command(tmp_path, monkeypatch, capsys):
-    from videodub.domain.models import MediaAsset
     import videodub.cli.inspect as ic
+    from videodub.domain.models import MediaAsset
     monkeypatch.setattr(ic, "probe_media", lambda p: MediaAsset(
         path=Path(p), kind="video", duration=12.5, has_video=True, has_audio=True,
         audio_sample_rate=48000, audio_channels=2,

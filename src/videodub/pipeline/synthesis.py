@@ -11,8 +11,8 @@ from videodub.backends.registry import get_synthesizer
 from videodub.config.job_spec import AlignSpec, JobSpec, TTSSpec
 from videodub.domain.models import (
     AlignedClip,
-    SynthStatus,
     SynthesisResult,
+    SynthStatus,
     VoiceAction,
     VoiceAssignment,
 )

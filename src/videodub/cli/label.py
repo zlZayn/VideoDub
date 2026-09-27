@@ -31,7 +31,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-from rich import box
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -579,7 +578,7 @@ def _run_repl(items: list[dict], media: str | None, output_path: Path) -> bool:
             snapshot, old_cursor = _snapshot(items), cursor
             _delete_segments(items, numbers)
             commit(snapshot, old_cursor)
-            cursor = min(sorted(numbers)[0], len(items))
+            cursor = min(min(numbers), len(items))
             _console.print(f"  ✓ 已删除 {len(numbers)} 句", style="green")
             refresh()
             continue

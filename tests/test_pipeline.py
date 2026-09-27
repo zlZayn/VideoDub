@@ -1,10 +1,7 @@
 """流水线测试 — cache / workspace / 计划 / 合成对齐 / 全链集成（全 mock，不跑真模型与 ffmpeg）"""
 
 import json
-import sys
 from pathlib import Path
-
-import pytest
 
 from videodub.config.job_spec import (
     AlignSpec,
@@ -17,17 +14,21 @@ from videodub.config.job_spec import (
 from videodub.domain.models import (
     AlignedClip,
     MixMode,
-    SynthStatus,
     SynthesisResult,
+    SynthStatus,
     VoiceAction,
-    VoiceAssignment,
 )
 from videodub.domain.transcript import Segment, TimeRange, Transcript
-from videodub.pipeline.cache import Cache, asr_cache_key, audio_hash, text_hash, tts_cache_key
+from videodub.pipeline.cache import (
+    Cache,
+    asr_cache_key,
+    audio_hash,
+    text_hash,
+    tts_cache_key,
+)
 from videodub.pipeline.planning import build_mix_plan, build_voice_plan
 from videodub.pipeline.synthesis import align_segments
 from videodub.pipeline.workspace import Workspace
-
 
 # ── cache ──
 
@@ -191,7 +192,7 @@ def test_mix_plan_explicit_full_wins_over_kept():
 # ── 对齐 ──
 
 def test_align_results_and_extreme_warning(tmp_path, monkeypatch):
-    import videodub.pipeline.synthesis as synthesis
+    from videodub.pipeline import synthesis
 
     monkeypatch.setattr(synthesis, "stretch_audio_to_duration", lambda src, dst, target: Path(dst).write_bytes(b"x"))
     monkeypatch.setattr(synthesis, "post_process_audio", lambda src, dst, **kw: Path(dst).write_bytes(b"x"))
@@ -210,7 +211,6 @@ def test_align_results_and_extreme_warning(tmp_path, monkeypatch):
 
 
 def test_align_passes_through_non_ok(tmp_path):
-    import videodub.pipeline.synthesis as synthesis
     transcript = _transcript((0.0, 1.0, "a", None))
     results = (SynthesisResult("seg_0001", SynthStatus.FAILED, error="炸了"),)
     ws = Workspace(tmp_path / "run")
@@ -254,9 +254,9 @@ def _make_job(tmp_path, *, cache=False):
 
 
 def test_run_job_full_fake_pipeline(tmp_path, monkeypatch):
-    import videodub.pipeline.runner as runner
-    from videodub.pipeline.cache import Cache as RealCache
     from videodub.ffmpeg.probe import MediaAsset
+    from videodub.pipeline import runner
+    from videodub.pipeline.cache import Cache as RealCache
 
     monkeypatch.setattr(runner, "probe_media", lambda p: MediaAsset(
         path=Path(p), kind="video", duration=5.0, has_video=True, has_audio=True,
@@ -302,8 +302,8 @@ def test_run_job_full_fake_pipeline(tmp_path, monkeypatch):
 
 
 def test_run_job_dry_run_skips_heavy_steps(tmp_path, monkeypatch):
-    import videodub.pipeline.runner as runner
     from videodub.ffmpeg.probe import MediaAsset
+    from videodub.pipeline import runner
 
     monkeypatch.setattr(runner, "probe_media", lambda p: MediaAsset(
         path=Path(p), kind="video", duration=5.0, has_video=True, has_audio=True,

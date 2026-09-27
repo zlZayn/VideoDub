@@ -13,8 +13,8 @@ from videodub.backends.tts_voxcpm import VoxCpmSynthesizer
 from videodub.config.job_spec import (
     ASRBackend,
     TranscriptSpec,
-    TTSSpec,
     TTSMode,
+    TTSSpec,
     resolve_model_name,
 )
 

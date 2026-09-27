@@ -11,7 +11,6 @@ from videodub.ffmpeg.filters import build_mix_invocation, build_mute_expression
 from videodub.ffmpeg.ops import build_atempo_chain
 from videodub.ffmpeg.render_mix import build_render_command
 
-
 # ── 纯工具 ──
 
 def test_build_mute_expression_single_range():
@@ -131,9 +130,9 @@ def test_render_audio_only_command_golden():
         "-y", "-i", "input.mp4",
         "-i", "a.wav",
         "-filter_complex",
-        "[0:a]aformat=sample_rates=48000:channel_layouts=mono,volume=0.3[base];"
+        ("[0:a]aformat=sample_rates=48000:channel_layouts=mono,volume=0.3[base];"
         "[1:a]adelay=1000|1000,acopy[d0];"
-        "[base][d0]amix=inputs=2:duration=longest:dropout_transition=0[aout]",
+        "[base][d0]amix=inputs=2:duration=longest:dropout_transition=0[aout]"),
         "-map", "[aout]",
         "-c:a", "pcm_s16le", "-ar", "48000",
         "out.wav",

@@ -14,7 +14,7 @@ from datetime import datetime
 
 def _current_time() -> str:
     """获取当前时间字符串 HH:MM:SS"""
-    return datetime.now().strftime("%H:%M:%S")
+    return datetime.now().astimezone().strftime("%H:%M:%S")
 
 
 def log(stage: str, message: str) -> None:

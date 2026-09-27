@@ -10,13 +10,11 @@ from videodub.domain.models import (
     MixMode,
     MixPlan,
     PlacedClip,
-    SynthStatus,
     SynthesisResult,
+    SynthStatus,
     VoiceAction,
-    VoiceAssignment,
 )
 from videodub.domain.transcript import Segment, TimeRange, Transcript, normalize_speaker
-
 
 # ── TimeRange ──
 

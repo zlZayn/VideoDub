@@ -20,8 +20,15 @@ from videodub.ffmpeg.runner import ensure_ffmpeg_available, run_ffmpeg_command
 from videodub.pipeline.cache import Cache, asr_cache_key
 from videodub.pipeline.planning import build_mix_plan, build_voice_plan
 from videodub.pipeline.report import Report, write_report
-from videodub.pipeline.synthesis import align_segments, prepare_refs, synthesize_segments
-from videodub.pipeline.transcript_loader import load_json_transcript, load_subtitle_transcript
+from videodub.pipeline.synthesis import (
+    align_segments,
+    prepare_refs,
+    synthesize_segments,
+)
+from videodub.pipeline.transcript_loader import (
+    load_json_transcript,
+    load_subtitle_transcript,
+)
 from videodub.pipeline.workspace import Workspace, create_workspace
 from videodub.utils.logger import log, log_stage_header, log_success
 

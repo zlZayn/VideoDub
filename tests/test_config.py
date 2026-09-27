@@ -3,13 +3,13 @@
 用 tmp_path 建真实文件，不碰模型与 FFmpeg。
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
 from pydantic import ValidationError
 
 from videodub.config.job_spec import (
     ASRBackend,
-    JobSpec,
     MixPolicy,
     TranscriptSource,
     TTSMode,

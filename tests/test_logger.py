@@ -3,7 +3,6 @@
 不调用任何模型，仅测试日志输出格式（videodub.utils.logger 与原 core.logger 同 API）。
 """
 
-import sys
 from io import StringIO
 from unittest.mock import patch
 

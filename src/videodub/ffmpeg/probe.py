@@ -16,7 +16,7 @@ def probe_duration(media_path: str) -> float:
         "-of", "default=noprint_wrappers=1:nokey=1",
         media_path,
     ]
-    result = subprocess.run(command, capture_output=True)
+    result = subprocess.run(command, capture_output=True, check=False)
     out = result.stdout.decode("utf-8", errors="replace").strip()
     try:
         return float(out)
@@ -31,7 +31,7 @@ def probe_media(media_path: str) -> MediaAsset:
         "-show_streams", "-show_format",
         "-of", "json", media_path,
     ]
-    result = subprocess.run(command, capture_output=True)
+    result = subprocess.run(command, capture_output=True, check=False)
     # ffprobe 输出是 UTF-8；Windows 下默认编码是 GBK，必须显式解码
     out = result.stdout.decode("utf-8", errors="replace")
     if result.returncode != 0:

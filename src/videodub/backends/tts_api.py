@@ -73,6 +73,6 @@ class ApiSynthesizer:
             with open(output_path, "wb") as f:
                 f.write(response.content)
             return True
-        except Exception as error:
+        except Exception as error:  # noqa: BLE001 — 覆盖 httpx 客户端与落盘；base_url 来自用户配置，畸形时抛的 httpx.InvalidURL 不属 HTTPError，收窄会成为猜测
             log_warning(f"TTS 异常: {error}")
             return False

@@ -48,13 +48,13 @@ class VoxCpmSynthesizer:
             log_warning("VoxCPM2 模型未加载，请先调用 load()")
             return False
         try:
-            generate_kwargs = dict(text=text, inference_timesteps=self.inference_steps)
+            generate_kwargs = {"text": text, "inference_timesteps": self.inference_steps}
             if ref_audio:
                 generate_kwargs["reference_wav_path"] = ref_audio
             waveform = self._model.generate(**generate_kwargs)
             actual_sample_rate = self._model.tts_model.sample_rate
             sf.write(output_path, waveform, actual_sample_rate)
             return True
-        except Exception as error:
+        except Exception as error:  # noqa: BLE001 — 覆盖本地推理全量异常（torch / cudnn / 显存）与 soundfile 落盘，收窄等于赌第三方异常面
             log_warning(f"生成失败: {error}")
             return False

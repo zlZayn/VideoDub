@@ -43,7 +43,7 @@ class InputSpec(BaseModel):
     path: Path
 
     @model_validator(mode="after")
-    def _check_exists(self) -> "InputSpec":
+    def _check_exists(self) -> InputSpec:
         if not self.path.exists():
             raise ValueError(f"输入媒体不存在: {self.path}")
         return self
@@ -57,7 +57,7 @@ class OutputSpec(BaseModel):
     audio_bitrate: str = "192k"
 
     @model_validator(mode="after")
-    def _resolve_audio_only(self) -> "OutputSpec":
+    def _resolve_audio_only(self) -> OutputSpec:
         if self.audio_only is None:
             self.audio_only = self.path.suffix.lower() in AUDIO_ONLY_EXTENSIONS
         return self
@@ -75,7 +75,7 @@ class TranscriptSpec(BaseModel):
     max_speakers: int = Field(default=2, ge=1, le=20)
 
     @model_validator(mode="after")
-    def _check_source_path(self) -> "TranscriptSpec":
+    def _check_source_path(self) -> TranscriptSpec:
         if self.source in (TranscriptSource.JSON, TranscriptSource.SUBTITLE):
             if self.path is None:
                 raise ValueError(f"台词来源 {self.source.value} 需要指定 path")
@@ -102,7 +102,7 @@ class VoiceSpec(BaseModel):
         return data
 
     @model_validator(mode="after")
-    def _check_paths_exist(self) -> "VoiceSpec":
+    def _check_paths_exist(self) -> VoiceSpec:
         paths = [self.ref_audio] if self.ref_audio else []
         paths += [p for p in self.speaker_map.values() if p is not None]
         missing = [str(p) for p in paths if not p.exists()]
@@ -151,7 +151,7 @@ class JobSpec(BaseModel):
     runtime: RuntimeSpec = RuntimeSpec()
 
     @model_validator(mode="after")
-    def _check_voice_refs(self) -> "JobSpec":
+    def _check_voice_refs(self) -> JobSpec:
         has_ref = self.voice.ref_audio is not None
         has_map = bool(self.voice.speaker_map)
         if has_ref and has_map:
