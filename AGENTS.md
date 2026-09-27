@@ -26,13 +26,15 @@
 ## 验证快照
 
 - Python 3.12.10（`.python-version` 钉住）；`.python-version` + `uv.lock` 已补（2026-09-27），包管理三件套齐了。
-  dev 组只有 ruff，**运行时依赖仍是刻意的空清单**（后端按需安装，见 [pyproject.toml](pyproject.toml) 注释），
-  锁文件因此不含后端
+  dev 组为 pytest + ruff；**运行时依赖仍是刻意的空清单**（后端按需安装，见 [pyproject.toml](pyproject.toml) 注释），
+  锁文件因此不含后端 —— 这条口径 2026-09-27 复核后维持不变
 - lint：`uv run ruff check .` → All checks passed!（2026-09-27，ruff 0.16.9）
-- pytest：132 passed / 0 failed（2026-09-27 复跑，含真 ffmpeg e2e；无 skip）。**口径要说清**：
-  uv 环境只装 dev 组（ruff），这条命令是回落到 PATH 上本机全局的 pytest 9.0.3（系统 Python 3.12，
-  另有 pydantic / rich / numpy / soundfile / httpx / faster-whisper / torch）；modelscope / voxcpm 未装，
-  重后端在用例里是 mock 注入的 —— 复现它靠的是本机全局环境，不是锁文件
+- pytest 两条口径并存（2026-09-27 复核），**引用时必须说明是哪个环境**：
+  - 锁文件环境 `uv run pytest`：pytest 9.1.1 来自 .venv；碰 numpy / pydantic 的 5 个模块收集失败，
+    能跑的是另 4 个模块的 **42 passed**（domain_models / ffmpeg_filters / logger / subtitle_loader）
+  - 系统 Python（本机全局装有后端）：仍 **132 collected，129 passed**（`-k "not e2e"`，3 个真 ffmpeg
+    e2e 本次未复跑）；modelscope / voxcpm 未装，重后端在用例里是 mock 注入的
+  - 两个数字的差来自「依赖没写进 dependencies」，不是失败 —— 补依赖是下面的待办，没补前别把 42 当成总数
 
 ## 待办
 
