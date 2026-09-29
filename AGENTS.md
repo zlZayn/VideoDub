@@ -27,21 +27,16 @@
 
 ## 验证快照
 
-- Python 3.12.10（`.python-version` 钉住）；`.python-version` + `uv.lock` 已补（2026-09-27），包管理三件套齐了。
-  dev 组为 pytest + ruff；**运行时依赖仍是刻意的空清单**（后端按需安装，见 [pyproject.toml](pyproject.toml) 注释），
-  锁文件因此不含后端 —— 这条口径 2026-09-27 复核后维持不变
-- lint：`uv run ruff check .` → All checks passed!（2026-09-27，ruff 0.16.9）
-- pytest 两条口径并存（2026-09-27 复核），**引用时必须说明是哪个环境**：
-  - 锁文件环境 `uv run pytest`：pytest 9.1.1 来自 .venv；碰 numpy / pydantic 的 5 个模块收集失败，
-    能跑的是另 4 个模块的 **42 passed**（domain_models / ffmpeg_filters / logger / subtitle_loader）
-  - 系统 Python（本机全局装有后端）：仍 **132 collected，129 passed**（`-k "not e2e"`，3 个真 ffmpeg
-    e2e 本次未复跑）；modelscope / voxcpm 未装，重后端在用例里是 mock 注入的
-  - 两个数字的差来自「依赖没写进 dependencies」，不是失败 —— 补依赖是下面的待办，没补前别把 42 当成总数
+- Python 3.12.10（`.python-version` 钉住）；包管理三件套齐（`.python-version` + `uv.lock`）。
+  dev 组为 pytest + ruff；轻量核心依赖（httpx / numpy / pydantic / rich / soundfile）已在 `dependencies`
+  （pydantic / rich / soundfile 为模块级导入；numpy / httpx 为用例所需）；重型后端（faster-whisper /
+  modelscope / voxcpm）保持按需安装、用例 mock 注入，见 [pyproject.toml](pyproject.toml) 注释
+- lint：`uv run ruff check .` → All checks passed!；`uv run ruff format --check .` 全绿（2026-09-29，ruff 0.16.9）
+- pytest：`uv run pytest` → **132 passed**（2026-09-29；本机 .venv 与 CI 同口径；e2e 需 ffmpeg，两处均已具备）
 
 ## 待办
 
-- [ ] pyproject 依赖清单补全（faster-whisper / modelscope / voxcpm / soundfile / httpx / numpy / pydantic）——
-  骨架与锁文件已就位，缺的只是把后端写进 `dependencies`（现在后端靠本机全局安装 + 用例 mock）
+- [ ] 重型后端写进 `dependencies`（faster-whisper / modelscope / voxcpm）——现按需安装，用例为 mock 注入
 - [ ] 词级对齐（v2 候选，架构预留）
 - [ ] 翻译配音（v2 候选，架构预留）
 
