@@ -13,7 +13,7 @@
 
 ## 常用命令（活文档）
 
-- 本地钩子：`pre-commit install`（每个 clone 一次；本体 `uv tool install pre-commit`）——提交前自动 `ruff check --fix` + `ruff format`；CI 只读跑同一组检查（并在 runner 上装 ffmpeg）
+- 本地钩子：`pre-commit install`（每个 clone 一次；本体 `uv tool install pre-commit`）——提交前自动 `ruff check --fix` + `ruff format`；CI 只读跑同一组检查（并在 runner 上装 ffmpeg）；全量跑 `pre-commit run --all-files`；临时跳过 `git commit --no-verify`；定义见 [.pre-commit-config.yaml](.pre-commit-config.yaml)
 
 - 完整配音：`videodub run <视频> --ref-audio <参考音频> -o <输出>`
 - 仅输出音频：`-o out.wav`（扩展名自动识别）或 `--audio-only`
