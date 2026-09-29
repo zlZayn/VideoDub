@@ -1,0 +1,51 @@
+# CI —— 只读质检：不写回仓库，不做任何发布动作。
+#
+# 为什么需要装 ffmpeg：tests/test_e2e_ffmpeg.py 与 test_ffmpeg_filters.py
+# 直接驱动 ffmpeg 可执行文件，ubuntu-latest 默认镜像不自带。
+#
+# 已知不确定项（首跑才知道）：
+#   部分测试涉及 faster-whisper / VoxCPM 等重型模型下载，CI 上可能超时。
+#   若首跑红：报告后按结果调整（例如按 marker 拆分），不擅自删测试。
+#
+# 三条判据的单一来源：
+#   - Ruff 版本来自 pyproject.toml 的 [dependency-groups] dev，锁在 uv.lock；
+#   - Python 版本来自仓内 .python-version（由 uv 解析）；
+#   - 安装统一 `uv sync --frozen`：锁文件与 pyproject 不同步时直接红。
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Ruff · Pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install dependencies (frozen)
+        run: uv sync --frozen --group dev
+
+      - name: Ruff check
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      # 本仓 tests/ 有 9 个 test_*.py；pyproject 已把 basetemp 指到 .pytest-tmp。
+      - name: Pytest
+        run: uv run pytest
