@@ -7,9 +7,15 @@ name = "videodub"
 version = "0.1.0"
 description = "视频音色替换 — 本地 VoxCPM2 音色克隆 + 逐句时长对齐对口型"
 requires-python = ">=3.12"
-# 依赖清单待补（骨架不装依赖，后端按需安装）：
-# faster-whisper>=1.0 / modelscope>=1.18 / voxcpm>=2.0 / soundfile>=0.12 / httpx>=0.27 / numpy>=1.24 / pydantic>=2.0
-dependencies = []
+# 轻量核心依赖已声明：pydantic / soundfile / rich 是模块级导入，numpy / httpx 为用例所需；
+# 重型后端保持按需安装，待补：faster-whisper>=1.0 / modelscope>=1.18 / voxcpm>=2.0
+dependencies = [
+    "httpx>=0.27",
+    "numpy>=1.24",
+    "pydantic>=2.0",
+    "rich>=13.0",
+    "soundfile>=0.12",
+]
 
 [project.scripts]
 videodub = "videodub.cli.main:main"
