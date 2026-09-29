@@ -1,5 +1,7 @@
 # VideoDub
 
+[![CI](https://github.com/zlZayn/VideoDub/actions/workflows/ci.yml/badge.svg)](https://github.com/zlZayn/VideoDub/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 视频音色替换 —— 本地 VoxCPM2 音色克隆 + 逐句时长对齐对口型。
 
 支持单说话人全局换音色、分角色配音（说话人分离）、部分替换（一人换一人保留）、保留背景音。
@@ -132,3 +134,15 @@ python tests/run_all_tests.py  # 薄壳，等价上一行
 - 维护索引（规则/验证快照/待办/坑）→ [AGENTS.md](AGENTS.md)
 - 子目录双件：assets / examples / src/videodub / tests（README 文档层 + AGENTS 规则层）
 - 决策记录 → [.agents/notes/](.agents/notes/)
+
+---
+
+## 许可
+
+- 本仓基于 [MIT 许可](LICENSE) 发布。
+
+## 贡献
+
+- 本仓为个人项目；问题与建议请走 [Issues](https://github.com/zlZayn/VideoDub/issues)。
+
+维护者文档地图 → 见 [AGENTS.md](AGENTS.md)。
